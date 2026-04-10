@@ -1,0 +1,278 @@
+/* ===== RES Teaser Site — style.css ===== */
+
+/* ---------- Reset & base ---------- */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg:      #1a1a1a;
+  --bg-deep: #111111;
+  --text:    #e8e4de;
+  --gold:    #C4A265;
+  --muted:   #888880;
+  --serif:   'Cormorant Garamond', 'Noto Serif JP', serif;
+  --sans:    'Noto Sans JP', sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: var(--sans);
+  line-height: 1.7;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Fade-in animation ---------- */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  opacity: 0;
+  animation: fadeUp 1s ease-out forwards;
+}
+
+.fade-in.delay-1 { animation-delay: 0.3s; }
+.fade-in.delay-2 { animation-delay: 0.6s; }
+.fade-in.delay-3 { animation-delay: 0.9s; }
+.fade-in.delay-4 { animation-delay: 1.2s; }
+.fade-in.delay-5 { animation-delay: 1.5s; }
+
+/* ---------- Hero ---------- */
+.hero {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  background: var(--bg-deep);
+}
+
+.hero-image-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  margin-bottom: 3rem;
+  overflow: hidden;
+}
+
+.hero-image-wrapper img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: brightness(0.92) contrast(1.05);
+}
+
+/* Subtle vignette overlay */
+.hero-image-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom,
+      var(--bg-deep) 0%,
+      transparent 8%,
+      transparent 92%,
+      var(--bg-deep) 100%);
+  pointer-events: none;
+}
+
+.hero-text {
+  text-align: center;
+  max-width: 640px;
+}
+
+.artist-name {
+  font-family: var(--serif);
+  font-size: clamp(2.4rem, 6vw, 4.2rem);
+  font-weight: 300;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 0.2em;
+}
+
+.artist-name-jp {
+  font-family: 'Noto Serif JP', serif;
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  font-weight: 400;
+  letter-spacing: 0.5em;
+  color: var(--muted);
+  margin-bottom: 2rem;
+}
+
+.tagline-en {
+  font-family: var(--serif);
+  font-size: clamp(1.1rem, 2.8vw, 1.6rem);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  margin-bottom: 0.6rem;
+}
+
+.tagline-jp {
+  font-family: 'Noto Serif JP', serif;
+  font-size: clamp(0.85rem, 2vw, 1.05rem);
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0.15em;
+}
+
+/* ---------- About ---------- */
+.about {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 5rem 1.5rem;
+  text-align: center;
+}
+
+.about-text-en,
+.about-text-jp {
+  font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+  line-height: 1.9;
+  margin-bottom: 1.5rem;
+}
+
+.about-text-en {
+  font-family: var(--serif);
+  color: var(--text);
+}
+
+.about-text-jp {
+  font-family: 'Noto Serif JP', serif;
+  color: var(--muted);
+  font-size: clamp(0.85rem, 1.6vw, 0.95rem);
+}
+
+/* Thin decorative line */
+.divider {
+  display: block;
+  width: 48px;
+  height: 1px;
+  background: var(--gold);
+  margin: 3rem auto;
+  border: none;
+}
+
+/* ---------- Coming 2026 ---------- */
+.coming {
+  text-align: center;
+  padding: 3rem 1.5rem 5rem;
+}
+
+.coming-label {
+  font-family: var(--serif);
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  font-weight: 300;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* ---------- Gallery (secondary images) ---------- */
+.gallery {
+  display: flex;
+  gap: 2px;
+  max-width: 960px;
+  margin: 0 auto 4rem;
+  padding: 0 1.5rem;
+}
+
+.gallery img {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  height: auto;
+  object-fit: cover;
+  filter: brightness(0.85) contrast(1.05);
+}
+
+/* ---------- Footer ---------- */
+.footer {
+  border-top: 1px solid #2a2a2a;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.2rem;
+}
+
+.footer-links a {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+  color: var(--gold);
+}
+
+.footer-links svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+.footer-email {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: 0.05em;
+}
+
+.footer-email:hover {
+  color: var(--gold);
+}
+
+.copyright {
+  font-size: 0.8rem;
+  color: #555;
+  margin-top: 1rem;
+  letter-spacing: 0.1em;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 600px) {
+  .hero {
+    padding: 1.5rem 1rem;
+  }
+
+  .hero-image-wrapper {
+    margin-bottom: 2rem;
+  }
+
+  .about {
+    padding: 3rem 1rem;
+  }
+
+  .gallery {
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 1rem;
+  }
+
+  .gallery img {
+    width: 100%;
+    flex: none;
+  }
+}
