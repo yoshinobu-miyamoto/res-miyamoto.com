@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Polyhedra Studio — RES Miyamoto</title>
+  <meta name="description" content="多面体を3Dで眺め、コンウェイ演算で形を生み、紙模型の型紙（のりしろ・番号・山谷折り付き）を書き出すスタジオ。">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ===== ヘッダー ===== -->
+  <header class="topbar">
+    <a class="brand" href="../" title="res-miyamoto.com へ戻る">
+      <span class="brand-mark">RES</span>
+      <span class="brand-name">Polyhedra Studio</span>
+      <span class="brand-ja">多面体スタジオ</span>
+    </a>
+    <div class="seg" role="tablist" aria-label="表示の切り替え">
+      <button type="button" id="view-3d" data-view="3d" role="tab">立体</button>
+      <button type="button" id="view-split" data-view="split" role="tab">分割</button>
+      <button type="button" id="view-net" data-view="net" role="tab">展開図</button>
+    </div>
+  </header>
+
+  <!-- ===== ライブラリ ===== -->
+  <aside class="panel library" aria-label="多面体ライブラリ">
+    <div class="panel-scroll">
+      <section class="block">
+        <h2 class="block-title">コンウェイ表記 <span class="en">Conway notation</span></h2>
+        <form class="notation" id="notation-form" autocomplete="off">
+          <input id="notation-input" type="text" spellcheck="false" placeholder="例: tI, sC, dkD" aria-label="コンウェイ表記">
+          <button type="submit" class="btn btn-gold">作成</button>
+        </form>
+        <p class="notation-msg" id="notation-msg" aria-live="polite"></p>
+        <div class="chips" id="op-chips" aria-label="演算子（左に追加）"></div>
+        <div class="chips seeds" id="seed-chips" aria-label="種多面体"></div>
+        <label class="check"><input type="checkbox" id="canonical" checked> 正準化（辺を中球に接し、面を平面に整える）</label>
+      </section>
+
+      <section class="block">
+        <input id="search" class="search" type="search" placeholder="名前・表記で検索" aria-label="ライブラリを検索">
+        <div id="library-list" class="lib-list"></div>
+      </section>
+
+      <section class="block help">
+        <h2 class="block-title">使い方 <span class="en">How to</span></h2>
+        <ol>
+          <li>左の一覧から形を選ぶか、コンウェイ表記を入力します。</li>
+          <li>「型紙」で用紙と最長辺の長さを決めます。</li>
+          <li>「印刷 / PDF」で実寸（100%）印刷。実線で切り、破線で折り、同じ番号の辺どうしを貼り合わせます。</li>
+        </ol>
+        <dl class="kv help-keys">
+          <dt>回転</dt><dd>ドラッグ（はじくと回り続けます）</dd>
+          <dt>拡大・縮小</dt><dd>ホイール / ピンチ</dd>
+          <dt>視点リセット</dt><dd>ダブルクリック</dd>
+          <dt>面の対応</dt><dd>面にカーソルを置く</dd>
+        </dl>
+      </section>
+    </div>
+  </aside>
+
+  <!-- ===== ステージ ===== -->
+  <main class="stage" id="stage">
+    <section class="pane pane-3d" id="pane-3d" aria-label="立体表示">
+      <div class="gl" id="gl"></div>
+      <div class="title-block">
+        <h1 id="poly-name">—</h1>
+        <p class="poly-en" id="poly-en"></p>
+        <p class="poly-meta"><span class="chip-mono" id="poly-notation"></span><span id="poly-counts"></span></p>
+      </div>
+      <div class="tools-3d">
+        <button type="button" class="icon-btn" id="btn-spin" aria-pressed="true" title="自動回転">
+          <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/></svg>
+        </button>
+        <button type="button" class="icon-btn" id="btn-reset" title="視点をリセット（ダブルクリックでも可）">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+        </button>
+        <button type="button" class="icon-btn" id="btn-png" title="画像（PNG）を保存">
+          <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/></svg>
+        </button>
+      </div>
+      <div class="hover-info" id="hover-info" hidden></div>
+      <div class="foldbar">
+        <button type="button" class="icon-btn play" id="btn-fold" title="展開アニメーション">
+          <svg viewBox="0 0 24 24" class="i-play"><path d="M8 5l11 7-11 7z"/></svg>
+        </button>
+        <label class="fold-label" for="fold">展開</label>
+        <input type="range" id="fold" min="0" max="1000" value="0" aria-label="展開の度合い">
+        <output id="fold-out" for="fold">0%</output>
+      </div>
+    </section>
+
+    <section class="pane pane-net" id="pane-net" aria-label="展開図">
+      <div class="net-toolbar">
+        <div class="net-summary" id="net-summary">—</div>
+        <div class="net-actions">
+          <button type="button" class="btn" id="btn-reunfold" title="別の切り開き方を試す">別の展開</button>
+          <button type="button" class="icon-btn sm" id="net-zoom-out" title="縮小">−</button>
+          <button type="button" class="icon-btn sm" id="net-zoom-fit" title="幅に合わせる">⤢</button>
+          <button type="button" class="icon-btn sm" id="net-zoom-in" title="拡大">+</button>
+        </div>
+      </div>
+      <div class="net-scroll" id="net-scroll">
+        <div class="net-pages" id="net-pages"></div>
+      </div>
+      <div class="busy" id="busy" hidden>計算中…</div>
+    </section>
+  </main>
+
+  <!-- ===== インスペクタ ===== -->
+  <aside class="panel inspector" aria-label="設定">
+    <div class="panel-scroll">
+
+      <section class="block" id="param-block" hidden>
+        <h2 class="block-title">形状 <span class="en">Shape</span></h2>
+        <div class="row">
+          <label for="param" id="param-label">n</label>
+          <input type="range" id="param" min="3" max="16" step="1" value="6">
+          <output id="param-out" for="param">6</output>
+        </div>
+      </section>
+
+      <details class="block" open>
+        <summary class="block-title">表示 <span class="en">Display</span></summary>
+        <div class="toggles">
+          <label class="check"><input type="checkbox" id="show-faces" checked> 面</label>
+          <label class="check"><input type="checkbox" id="show-edges" checked> 辺</label>
+          <label class="check"><input type="checkbox" id="show-verts"> 頂点</label>
+        </div>
+        <div class="row"><label for="opacity">不透明度</label><input type="range" id="opacity" min="0.15" max="1" step="0.01" value="1"><output id="opacity-out">100%</output></div>
+        <div class="row"><label for="edge-w">辺の太さ</label><input type="range" id="edge-w" min="0.002" max="0.04" step="0.001" value="0.011"><output id="edge-w-out"></output></div>
+        <div class="row"><label for="vert-s">頂点の大きさ</label><input type="range" id="vert-s" min="0.01" max="0.08" step="0.001" value="0.024"><output id="vert-s-out"></output></div>
+        <div class="row"><label for="palette">配色</label><select id="palette"></select></div>
+        <div class="row"><label for="color-mode">色分け</label>
+          <select id="color-mode">
+            <option value="class">合同な面ごと</option>
+            <option value="sides">辺の数ごと</option>
+            <option value="single">単色</option>
+          </select>
+        </div>
+        <div class="row"><label for="edge-color">辺の色</label>
+          <select id="edge-color">
+            <option value="#c4a265">金</option>
+            <option value="#1c1b19">墨</option>
+            <option value="#f3efe6">白</option>
+          </select>
+        </div>
+      </details>
+
+      <details class="block" open>
+        <summary class="block-title">型紙 <span class="en">Paper model</span></summary>
+        <div class="row"><label for="paper">用紙</label>
+          <select id="paper"></select>
+          <select id="orient" aria-label="用紙の向き"><option value="p">縦</option><option value="l">横</option></select>
+        </div>
+        <div class="row"><label for="edge-mm">最長辺</label><input type="number" id="edge-mm" min="5" max="400" step="1" value="25"><span class="unit">mm</span></div>
+        <p class="hint" id="size-hint"></p>
+        <div class="row"><label for="tab-mode">のりしろ</label>
+          <select id="tab-mode"><option value="one">片側に付ける</option><option value="none">付けない</option></select>
+        </div>
+        <div class="row"><label for="tab-mm">のりしろ幅</label><input type="number" id="tab-mm" min="2" max="20" step="0.5" value="6"><span class="unit">mm</span></div>
+        <div class="toggles">
+          <label class="check"><input type="checkbox" id="labels" checked> 辺の番号</label>
+          <label class="check"><input type="checkbox" id="color-net" checked> 面に色を付けて印刷</label>
+        </div>
+      </details>
+
+      <details class="block" open>
+        <summary class="block-title">書き出し <span class="en">Export</span></summary>
+        <div class="export-grid">
+          <button type="button" class="btn btn-gold" id="btn-print">印刷 / PDF</button>
+          <button type="button" class="btn" id="btn-svg">SVG</button>
+          <button type="button" class="btn" id="btn-dxf" title="カッティングマシン・CAD 用（CUT / MOUNTAIN / VALLEY レイヤー）">DXF</button>
+          <button type="button" class="btn" id="btn-obj" title="3D モデル（Rhino・SketchUp・Blender など）">OBJ</button>
+        </div>
+        <p class="hint">印刷は「実際のサイズ（100%）」で。フッターの 50 mm バーで倍率を確認できます。</p>
+      </details>
+
+      <details class="block" open>
+        <summary class="block-title">情報 <span class="en">Properties</span></summary>
+        <div id="info"></div>
+      </details>
+    </div>
+  </aside>
+</div>
+
+<div id="print-root" aria-hidden="true"></div>
+<style id="page-style"></style>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
