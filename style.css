@@ -170,60 +170,102 @@ body {
 
 /* ---------- Studio link ---------- */
 .studio {
-  max-width: 720px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 1rem 1.5rem 0;
+  padding: 2rem 1.5rem 1rem;
 }
 
 .studio-link {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
-  gap: 1.4rem;
-  padding: 1.4rem 0;
-  border-top: 1px solid #2a2a2a;
-  border-bottom: 1px solid #2a2a2a;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  border: 1px solid #2a2a2a;
+  background: radial-gradient(120% 120% at 25% 50%, #1c1b18 0%, var(--bg-deep) 70%);
   color: var(--text);
   text-decoration: none;
-  transition: border-color 0.3s ease;
+  transition: border-color 0.4s ease;
 }
 
-.studio-mark {
-  flex: none;
-  width: 48px;
-  height: 48px;
-  fill: none;
-  stroke: var(--gold);
-  stroke-width: 1.2;
-  stroke-linejoin: round;
-  transition: transform 0.6s ease;
+.studio-figure {
+  display: block;
+  overflow: hidden;
+  border-radius: 2px;
 }
 
-.studio-text {
+.studio-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: brightness(0.92) contrast(1.04);
+  /* 画像の四角い縁を背景に溶け込ませる */
+  -webkit-mask-image: radial-gradient(closest-side, #000 82%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 82%, transparent 100%);
+  transition: transform 1.2s ease, filter 0.6s ease;
+}
+
+.studio-body {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  align-items: flex-start;
+  gap: 0.5rem;
   min-width: 0;
+}
+
+.studio-eyebrow {
+  font-family: var(--serif);
+  font-size: 0.85rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--gold);
 }
 
 .studio-title {
   font-family: var(--serif);
-  font-size: clamp(1.2rem, 2.6vw, 1.5rem);
-  letter-spacing: 0.12em;
+  font-size: clamp(1.9rem, 4.2vw, 2.8rem);
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  line-height: 1.15;
 }
 
 .studio-jp {
   font-family: 'Noto Serif JP', serif;
-  font-size: clamp(0.78rem, 1.6vw, 0.88rem);
+  font-size: clamp(0.9rem, 1.8vw, 1.05rem);
+  letter-spacing: 0.35em;
   color: var(--muted);
-  letter-spacing: 0.08em;
-  line-height: 1.7;
+  margin-bottom: 0.6rem;
 }
 
-.studio-arrow {
-  margin-left: auto;
+.studio-desc {
+  font-family: 'Noto Serif JP', serif;
+  font-size: clamp(0.88rem, 1.7vw, 1rem);
+  line-height: 1.9;
+  color: var(--text);
+}
+
+.studio-desc-en {
   font-family: var(--serif);
-  font-size: 1.4rem;
+  font-style: italic;
+  font-size: clamp(0.95rem, 1.8vw, 1.05rem);
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.studio-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 1.6rem;
+  border: 1px solid var(--gold);
   color: var(--gold);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.2em;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.studio-cta span {
   transition: transform 0.3s ease;
 }
 
@@ -233,13 +275,20 @@ body {
   outline: none;
 }
 
-.studio-link:hover .studio-mark,
-.studio-link:focus-visible .studio-mark {
-  transform: rotate(30deg);
+.studio-link:hover .studio-figure img,
+.studio-link:focus-visible .studio-figure img {
+  transform: scale(1.04);
+  filter: brightness(1.05) contrast(1.06);
 }
 
-.studio-link:hover .studio-arrow,
-.studio-link:focus-visible .studio-arrow {
+.studio-link:hover .studio-cta,
+.studio-link:focus-visible .studio-cta {
+  background: var(--gold);
+  color: var(--bg-deep);
+}
+
+.studio-link:hover .studio-cta span,
+.studio-link:focus-visible .studio-cta span {
   transform: translateX(4px);
 }
 
@@ -352,22 +401,23 @@ body {
   }
 
   .studio {
-    padding: 0.5rem 1rem 0;
+    padding: 1.5rem 1rem 0.5rem;
   }
 
   .studio-link {
-    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 1.25rem;
   }
 
-  .studio-mark {
-    width: 40px;
-    height: 40px;
+  .br-wide {
+    display: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .studio-mark,
-  .studio-arrow {
+  .studio-figure img,
+  .studio-cta,
+  .studio-cta span {
     transition: none;
   }
 }
