@@ -175,9 +175,18 @@ export function unfoldOnce(P, an, opt = {}) {
     remaining.delete(root);
     pieces.push(piece);
     let hullPts = hull2D(rootPoly);
-    const rootC = rootPoly.reduce((s, p) => v2add(s, p), [0, 0]).map((x) => x / rootPoly.length);
+    let rootC = rootPoly.reduce((s, p) => v2add(s, p), [0, 0]).map((x) => x / rootPoly.length);
 
     const frontier = [];
+    const layer = new Map([[root, 0]]);
+    // 角度の基準: 根の面の最初の辺の中点方向（同じ形の根なら同じ基準になる）
+    const m0 = v2mul(v2add(rootPoly[0], rootPoly[1]), 0.5);
+    let ang0 = Math.atan2(m0[1] - rootC[1], m0[0] - rootC[0]) - 1e-3;
+    const angleOf = (c) => { let a = Math.atan2(c[1] - rootC[1], c[0] - rootC[0]) - ang0; a %= 2 * Math.PI; return a < 0 ? a + 2 * Math.PI : a; };
+    // 根が正多角形なら、扇形（2π/辺数）ごとに同じ順で選ぶ → 回転対称な育ち方になる
+    const rl = rootPoly.map((q, i) => v2len(v2sub(rootPoly[(i + 1) % rootPoly.length], q)));
+    const regular = Math.max(...rl) - Math.min(...rl) < 1e-6 * scale;
+    let sector = regular ? (2 * Math.PI) / rootPoly.length : 2 * Math.PI;
     const pushNeighbors = (f) => {
       const face = P.faces[f];
       for (let k = 0; k < face.length; k++) {
@@ -186,16 +195,51 @@ export function unfoldOnce(P, an, opt = {}) {
         const Pa = piece.polys.get(f)[k], Pb = piece.polys.get(f)[(k + 1) % face.length];
         const poly = placeAcross(local, nb.g, nb.ia, nb.ib, Pa, Pb);
         const c = poly.reduce((s, p) => v2add(s, p), [0, 0]).map((x) => x / poly.length);
-        frontier.push({ parent: f, k, ...nb, poly, d: v2len(v2sub(c, rootC)), r: rand() });
+        const d = v2len(v2sub(c, rootC));
+        const ang = angleOf(c);
+        frontier.push({ parent: f, k, ...nb, poly, d, dq: Math.round((d / scale) * 1e5), ang, angS: Math.round(((ang % sector) / sector) * 1e5), layer: layer.get(f) + 1, r: rand() });
       }
     };
-    pushNeighbors(root);
+    // 辺を中心にする場合: 根と隣の面を先に置き、その辺の中点を中心に2回対称の順で育てる
+    const edgeNb = opt.edgeK !== undefined && pieces.length === 1 ? neighbor(root, opt.edgeK) : null;
+    if (edgeNb && remaining.has(edgeNb.g)) {
+      const k = opt.edgeK;
+      const Pa = rootPoly[k], Pb = rootPoly[(k + 1) % rootPoly.length];
+      const poly = placeAcross(local, edgeNb.g, edgeNb.ia, edgeNb.ib, Pa, Pb);
+      piece.polys.set(edgeNb.g, poly);
+      piece.boxes.set(edgeNb.g, bbox([poly]));
+      piece.parent.set(edgeNb.g, { parent: root, a: edgeNb.a, b: edgeNb.b, edge: edgeNb.edge });
+      piece.faces.push(edgeNb.g); piece.order.push(edgeNb.g);
+      placedBy[edgeNb.g] = poly; pieceOf[edgeNb.g] = pi;
+      remaining.delete(edgeNb.g);
+      layer.set(edgeNb.g, 0);
+      hullPts = hull2D(hullPts.concat(poly));
+      const rc = rootC;
+      rootC = v2mul(v2add(Pa, Pb), 0.5);
+      ang0 = Math.atan2(rc[1] - rootC[1], rc[0] - rootC[0]) - 1e-3;
+      sector = Math.PI;
+      pushNeighbors(root);
+      pushNeighbors(edgeNb.g);
+    } else pushNeighbors(root);
 
     while (frontier.length) {
       let idx;
       if (strategy === 'compact') {
         idx = 0;
         for (let i = 1; i < frontier.length; i++) if (frontier[i].d < frontier[idx].d - 1e-9) idx = i;
+      } else if (strategy === 'rings' || strategy === 'radial') {
+        // 対称性を保つ順: 層（根からの段数）→ 根からの距離 → 根まわりの角度
+        idx = 0;
+        const key = (c) => (strategy === 'rings' ? [c.layer, c.dq, c.angS, c.ang] : [c.dq, c.angS, c.ang]);
+        let kb = key(frontier[0]);
+        for (let i = 1; i < frontier.length; i++) {
+          const k = key(frontier[i]);
+          let less = false;
+          for (let j = 0; j < k.length; j++) {
+            if (Math.abs(k[j] - kb[j]) > 1e-6) { less = k[j] < kb[j]; break; }
+          }
+          if (less) { idx = i; kb = k; }
+        }
       } else if (strategy === 'bfs') idx = 0;
       else if (strategy === 'strip') idx = frontier.length - 1;
       else idx = Math.floor(rand() * frontier.length);
@@ -214,6 +258,7 @@ export function unfoldOnce(P, an, opt = {}) {
       piece.parent.set(cand.g, { parent: cand.parent, a: cand.a, b: cand.b, edge: cand.edge });
       piece.faces.push(cand.g);
       piece.order.push(cand.g);
+      layer.set(cand.g, cand.layer);
       placedBy[cand.g] = cand.poly; pieceOf[cand.g] = pi;
       remaining.delete(cand.g);
       hullPts = hull2D(hullPts.concat(cand.poly));
@@ -258,10 +303,121 @@ export function unfoldBest(P, an, opt = {}) {
       missing = cut - dec.reduce((s, p) => s + p.tabs.length, 0);
       res.dec = dec;
     }
-    const score = res.pieces.length * 1e6 + missing * 1e4 + area;
+    // 印刷用: 外から与えた評価（ページ数など）を最優先に
+    const extra = opt.scoreFn ? opt.scoreFn(res, missing) : null;
+    const score = extra !== null && extra !== undefined ? extra : res.pieces.length * 1e6 + missing * 1e4 + area;
     if (!best || score < best.score) best = { ...res, score, trial: t };
   }
   return best;
+}
+
+// ---------- 対称性を優先した展開（画面表示用） ----------
+// 面の重心（合同類つき）が、展開図の中心まわりの回転・鏡映で重なるかを調べる
+export function netSymmetry(piece, an) {
+  const pts = [];
+  for (const [f, poly] of piece.polys) {
+    let x = 0, y = 0;
+    for (const q of poly) { x += q[0]; y += q[1]; }
+    pts.push({ x: x / poly.length, y: y / poly.length, c: an.faceClass[f] });
+  }
+  const n = pts.length;
+  const C = pts.reduce((s, p) => [s[0] + p.x / n, s[1] + p.y / n], [0, 0]);
+  const tol = an.emax * 0.02;
+  const matches = (tf) => {
+    for (const p of pts) {
+      const [x, y] = tf(p.x - C[0], p.y - C[1]);
+      let ok = false;
+      for (const q of pts) {
+        if (q.c !== p.c) continue;
+        if (Math.abs(q.x - C[0] - x) < tol && Math.abs(q.y - C[1] - y) < tol) { ok = true; break; }
+      }
+      if (!ok) return false;
+    }
+    return true;
+  };
+  let rot = 1;
+  if (n > 1) {
+    for (const k of [12, 10, 8, 6, 5, 4, 3, 2]) {
+      const c = Math.cos((2 * Math.PI) / k), s = Math.sin((2 * Math.PI) / k);
+      if (matches((x, y) => [x * c - y * s, x * s + y * c])) { rot = k; break; }
+    }
+  }
+  // 鏡映: 中心から各面重心への方向と、その中間の方向を軸の候補にする
+  let mirror = false, axis = null;
+  if (n <= 260) {
+    const dirs = pts.map((p) => Math.atan2(p.y - C[1], p.x - C[0])).filter((a, i) => Math.hypot(pts[i].x - C[0], pts[i].y - C[1]) > tol);
+    dirs.sort((a, b) => a - b);
+    const cands = [...dirs];
+    for (let i = 0; i < dirs.length; i++) cands.push((dirs[i] + (dirs[(i + 1) % dirs.length] + (i + 1 === dirs.length ? 2 * Math.PI : 0))) / 2);
+    if (!cands.length) cands.push(0);
+    for (const a of cands) {
+      const c2 = Math.cos(2 * a), s2 = Math.sin(2 * a);
+      if (matches((x, y) => [x * c2 + y * s2, x * s2 - y * c2])) { mirror = true; axis = a; break; }
+    }
+  }
+  // 対称の数（回転 k、鏡映があれば 2k）。同じ数なら鏡映のあるほうを上に
+  return { rot, mirror, axis, value: rot * (mirror ? 2 : 1) + (mirror ? 0.1 : 0) };
+}
+
+/**
+ * 画面表示用: 対称性の高い展開図を選ぶ（用紙の制約なし）
+ * 戻り値は unfoldOnce と同じ形に { symmetry, dec, rank } を加えたもの
+ */
+export function unfoldSymmetric(P, an, opt = {}) {
+  const nF = P.faces.length;
+  const local = localFaces(P, an.normals);
+  const big = nF > 300;
+  // 根の候補: 合同類ごとに数面ずつ（対称軸の上にある面を拾うため）
+  const perClass = new Map();
+  for (let f = 0; f < nF; f++) {
+    const c = an.faceClass[f];
+    if (!perClass.has(c)) perClass.set(c, []);
+    if (perClass.get(c).length < (big ? 1 : 3)) perClass.get(c).push(f);
+  }
+  const roots = [...perClass.values()].flat().slice(0, big ? 3 : 12);
+  const strategies = big ? ['radial', 'compact'] : ['rings', 'radial', 'compact'];
+  const trials = [];
+  for (const root of roots) {
+    for (const strategy of strategies) trials.push({ strategy, root });
+    // 同じ形の面と接する辺を中心にした2回対称の候補（辺の種類ごとに1本）
+    const face = P.faces[root];
+    const seenPair = new Set();
+    for (let k = 0; k < face.length; k++) {
+      const e = an.edgeIndex.map.get(an.edgeIndex.key(face[k], face[(k + 1) % face.length]));
+      const g = e.faces.find((x) => x !== root);
+      if (g === undefined || an.faceClass[g] !== an.faceClass[root]) continue;
+      const key = Math.round(e.length / an.emax * 1e4);
+      if (seenPair.has(key)) continue;
+      seenPair.add(key);
+      trials.push({ strategy: 'radial', root, edgeK: k });
+      if (!big) trials.push({ strategy: 'rings', root, edgeK: k });
+    }
+  }
+  const cands = [];
+  const consider = (res, trial) => {
+    const dec = decorate(P, an, res, { tabH: opt.tabH || 0, tabMode: opt.tabH > 0 ? (opt.tabMode || 'one') : 'none', symmetric: true });
+    const cut = dec.reduce((s, p) => s + p.labels.length, 0) / 2;
+    const missing = opt.tabH > 0 && opt.tabMode !== 'none' ? cut - dec.reduce((s, p) => s + p.tabs.length, 0) : 0;
+    const symmetry = netSymmetry(res.pieces[0], an);
+    const pts = [...res.pieces[0].polys.values()].flat();
+    const r = minRect(pts);
+    cands.push({ ...res, dec, symmetry, missing, area: r.w * r.h, trial });
+  };
+  for (const t of trials.slice(0, big ? 8 : 48)) consider(unfoldOnce(P, an, { ...t, local, seed: 1 }), t);
+  // どれも1枚にならないときの保険（従来の探索）
+  if (cands.every((c) => c.pieces.length > 1)) {
+    const b = unfoldBest(P, an, { tabH: opt.tabH });
+    consider(b, b.trial);
+  }
+  // 1枚につながる → のりしろが欠けない → 対称性が高い → まとまりがよい
+  cands.sort((a, b) => a.pieces.length - b.pieces.length || a.missing - b.missing || b.symmetry.value - a.symmetry.value || a.area - b.area);
+  // 同じ評価の重複を除き、「別の展開」で順に選べるようにする
+  const uniq = [];
+  for (const c of cands) {
+    if (!uniq.some((u) => u.pieces.length === c.pieces.length && u.symmetry.value === c.symmetry.value && Math.abs(u.area - c.area) < 1e-6 * u.area)) uniq.push(c);
+  }
+  const pick = uniq[(opt.variant || 0) % uniq.length];
+  return { ...pick, rank: (opt.variant || 0) % uniq.length, count: uniq.length };
 }
 
 // ---------- のりしろ・番号・折り線 ----------
@@ -295,7 +451,7 @@ function tabPolygon(p, q, h, angP, angQ) {
  * 展開結果からのりしろ・番号・線種を作る
  * @param tabH のりしろ高さ（多面体単位）, tabMode 'one'|'none'
  */
-export function decorate(P, an, unf, { tabH = 0.15, tabMode = 'one', tabAngleDeg = 50 } = {}) {
+export function decorate(P, an, unf, { tabH = 0.15, tabMode = 'one', tabAngleDeg = 50, symmetric = false } = {}) {
   const { pieces, pieceOf } = unf;
   const eps = 1e-7 * an.emax;
   const out = pieces.map(() => ({ faces: [], folds: [], cuts: [], tabs: [], labels: [] }));
@@ -315,7 +471,28 @@ export function decorate(P, an, unf, { tabH = 0.15, tabMode = 'one', tabAngleDeg
   let label = 0;
   const tabAngle = (tabAngleDeg * Math.PI) / 180;
   const tabsByPiece = pieces.map(() => []);
-  for (const e of an.edges) {
+  // 対称な表示では、辺を「中心からの距離 → 角度」の順に処理し、のりしろは外側の辺に付ける
+  // （回転しても同じ規則になるので、展開図の対称性が崩れない）
+  const centers = pieces.map((pc) => {
+    let x = 0, y = 0, n = 0;
+    for (const poly of pc.polys.values()) for (const q of poly) { x += q[0]; y += q[1]; n++; }
+    return [x / n, y / n];
+  });
+  const edgeMid = (e) => {
+    const f = e.faces[0];
+    const a = posInPiece(f, e.a), b = posInPiece(f, e.b);
+    return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  };
+  let edgeList = an.edges;
+  if (symmetric) {
+    const key = (e) => {
+      const m = edgeMid(e), c = centers[pieceOf[e.faces[0]]];
+      return [Math.round(Math.hypot(m[0] - c[0], m[1] - c[1]) / an.emax * 1e4), Math.atan2(m[1] - c[1], m[0] - c[0])];
+    };
+    const keys = new Map(an.edges.map((e) => [e, key(e)]));
+    edgeList = [...an.edges].sort((x, y) => keys.get(x)[0] - keys.get(y)[0] || keys.get(x)[1] - keys.get(y)[1]);
+  }
+  for (const e of edgeList) {
     if (hinge.has(e)) {
       const f = e.faces[0];
       const pi = pieceOf[f];
@@ -363,12 +540,24 @@ export function decorate(P, an, unf, { tabH = 0.15, tabMode = 'one', tabAngleDeg
     const shapes = [[1, 1, 1], [1, 1, 0.5], [1, 0.5, 1], [1, 0.5, 0.5], [1, 1, 0.22], [1, 0.22, 1], [1, 0.22, 0.22],
       [0.65, 1, 1], [0.65, 0.5, 0.5], [0.65, 0.22, 0.22], [0.4, 0.5, 0.5], [0.4, 0.22, 0.22],
       [0.6, 1, 0.1], [0.6, 0.1, 1], [0.6, 0.5, 0.1], [0.6, 0.1, 0.5], [0.6, 0.1, 0.1], [0.35, 0.1, 0.1], [0.2, 0.06, 0.06]];
+    // 対称表示: 中心から遠い側を先に試す（同点は反時計回り側）
+    let order = [[0, 1], [1, 0]];
+    if (symmetric) {
+      const dc = occ.map((o) => {
+        const c = centers[o.pi];
+        const m = [(o.p[0] + o.q[0]) / 2 - c[0], (o.p[1] + o.q[1]) / 2 - c[1]];
+        return { r: Math.round(Math.hypot(m[0], m[1]) / an.emax * 1e4), m };
+      });
+      const first = dc[0].r !== dc[1].r ? (dc[0].r > dc[1].r ? 0 : 1) : (v2cross(dc[0].m, dc[1].m) > 0 ? 0 : 1);
+      order = first === 0 ? [[0, 1]] : [[1, 0]];
+      order.push(first === 0 ? [1, 0] : [0, 1]);
+    }
     for (const [hs, kP, kQ] of shapes) {
-      // 両側を試し、面積の大きいほうを採用
+      // 両側を試し、面積の大きいほうを採用（対称表示では規則どおりの側を優先）
       let best = null;
-      for (const [i, j] of [[0, 1], [1, 0]]) {
+      for (const [i, j] of order) {
         const t = tryTab(occ[i], occ[j], hs, kP, kQ);
-        if (t && (!best || t.area > best.area * 1.05)) best = { ...t, o: occ[i] };
+        if (t && (!best || (!symmetric && t.area > best.area * 1.05))) best = { ...t, o: occ[i] };
       }
       if (best) { placed = best; break; }
     }

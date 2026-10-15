@@ -5,7 +5,7 @@ import {
 } from './four.js';
 import { convexHull, normalize } from './geom.js';
 import { analyze, PALETTES } from './analysis.js';
-import { unfoldBest, decorate } from './unfold.js';
+import { unfoldBest, unfoldSymmetric, decorate } from './unfold.js';
 import { printableArea } from './netview.js';
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -284,7 +284,8 @@ export class Mode4D {
       return { strut: this._struts(proj, opt, diam), dec: [], warn };
     }
 
-    const dec = [];
+    const dec = [];      // 印刷用（面積効率）
+    const dispDec = [];  // 画面表示用（対称性）
     groups.forEach((g, gi) => {
       const label = gi < 26 ? LETTERS[gi] : 'Z' + (gi - 25);
       g.label = label;
@@ -293,15 +294,20 @@ export class Mode4D {
       const tabMM = opt.tabMode === 'none' ? 0 : opt.tabMM;
       const unf = unfoldBest(P, an, { maxW: area.w / scale, maxH: (area.h - 6) / scale, margin: (tabMM + 1) / scale, tabH: tabMM / scale });
       const d = decorate(P, an, unf, { tabH: tabMM / scale, tabMode: opt.tabMode });
-      d.forEach((pc, k) => {
-        pc.caption = `${label}${d.length > 1 ? '-' + (k + 1) : ''}  ${g.name}  × ${g.count}`;
+      const sym = unfoldSymmetric(P, an, { tabH: tabMM / scale, tabMode: opt.tabMode });
+      g.symmetry = sym.symmetry;
+      const finish = (list, out, forceAngle) => list.forEach((pc, k) => {
+        pc.caption = `${label}${list.length > 1 ? '-' + (k + 1) : ''}  ${g.name}  × ${g.count}`;
         pc.colors = P.faces.map(() => g.color);
         for (const lb of pc.labels) lb.text = label + lb.text;
         for (const t of pc.tabs) t.label = label + t.label;
-        dec.push(pc);
+        if (forceAngle !== undefined && k === 0) pc.forceAngle = forceAngle;
+        out.push(pc);
       });
+      finish(d, dec);
+      finish(sym.dec, dispDec, sym.symmetry.mirror ? Math.PI / 2 - sym.symmetry.axis : undefined);
     });
-    return { dec, scale, groups, warn, model };
+    return { dec, dispDec, scale, groups, warn, model };
   }
 
   _struts(proj, opt, diam) {

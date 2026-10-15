@@ -99,6 +99,10 @@
 
     <section class="pane pane-net" id="pane-net" aria-label="展開図">
       <div class="net-toolbar">
+        <div class="seg seg-sm" role="tablist" aria-label="型紙の表示">
+          <button type="button" data-netview="screen" role="tab" title="対称性を優先した展開図。3Dの展開アニメーションと同じ形です">画面（対称）</button>
+          <button type="button" data-netview="print" role="tab" title="用紙の枚数と無駄が少ない割付。印刷・SVG・DXF はこの形で書き出します">印刷（面積効率）</button>
+        </div>
         <div class="net-summary" id="net-summary">—</div>
         <div class="net-actions">
           <button type="button" class="btn" id="btn-reunfold" title="別の切り開き方を試す">別の展開</button>

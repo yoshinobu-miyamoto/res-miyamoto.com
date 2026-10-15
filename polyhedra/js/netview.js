@@ -53,6 +53,8 @@ function preparePiece(pc, scale, area, extraH = 0) {
       if (best) ang = best.a;
     } else if (!fits(ang)) ang += Math.PI / 2;
   }
+  // 画面表示: 対称軸の向きを固定する
+  if (pc.forceAngle !== undefined) ang = pc.forceAngle;
   const c = Math.cos(ang), s = Math.sin(ang);
   const T = (p) => { const q = rot(p, c, s); return [q[0] * scale, q[1] * scale]; };
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -138,7 +140,7 @@ function lighten(hex, k) {
  * opt: { colors, colorFaces, labels, title, notation, edgeMM, pageNo, pageCount, interactive, paper, landscape }
  */
 export function pageSVG(page, dec, layout, opt) {
-  const { W, H } = printableArea(opt.paper, opt.landscape);
+  const { W, H } = opt.board ? opt.board : printableArea(opt.paper, opt.landscape);
   const out = [];
   const lw = { cut: 0.28, fold: 0.22 };
   if (page.svgBody) {
@@ -204,7 +206,7 @@ export function pageSVG(page, dec, layout, opt) {
   const fy = H - PAGE_MARGIN - 3.2;
   const x0 = PAGE_MARGIN;
   out.push(`<g font-size="2.6" fill="#555">`);
-  out.push(`<text x="${x0}" y="${f2(fy)}">${esc(opt.title)}${opt.notation ? '  ·  ' + esc(opt.notation) : ''}  ·  ${esc(opt.sizeLabel || '最長辺')} ${f2(opt.edgeMM)} mm  ·  ${opt.pageNo} / ${opt.pageCount}</text>`);
+  out.push(`<text x="${x0}" y="${f2(fy)}">${esc(opt.title)}${opt.notation ? '  ·  ' + esc(opt.notation) : ''}  ·  ${esc(opt.sizeLabel || '最長辺')} ${f2(opt.edgeMM)} mm  ·  ${opt.footerNote ? esc(opt.footerNote) : opt.pageNo + ' / ' + opt.pageCount}</text>`);
   // 凡例
   const ly = fy - 4.4;
   const leg = [
@@ -327,4 +329,47 @@ export function strutPageBody(st, opt) {
   o.push(`<line x1="${bx}" y1="${fy - 1}" x2="${bx + 50}" y2="${fy - 1}" stroke="#555" stroke-width="0.3"/><text x="${bx + 25}" y="${fy - 2.2}" text-anchor="middle">50 mm（印刷倍率の確認用）</text></g>`);
   o.push('</g>');
   return o.join('');
+}
+
+// 画面表示用の台紙: 用紙の制約なしに、部品を対称軸の向きのまま並べる
+export function layoutBoard(dec, { scale, gap = 8 }) {
+  const items = dec.map((pc, i) => {
+    const it = { i, ...preparePiece(pc, scale, null, 0) };
+    if (pc.caption) {
+      const tf = it.tf;
+      it.tf = (p) => { const q = tf(p); return [q[0], q[1] + CAPTION_H]; };
+      it.h += CAPTION_H;
+      it.w = Math.max(it.w, pc.caption.length * 2.2);
+    }
+    return it;
+  });
+  const total = items.reduce((s, it) => s + (it.w + gap) * (it.h + gap), 0);
+  const rowW = Math.max(...items.map((it) => it.w), Math.min(900, Math.sqrt(total) * 1.5), 160);
+  let x = 0, y = 0, rowH = 0;
+  for (const it of items) {
+    if (x > 0 && x + it.w > rowW) { x = 0; y += rowH + gap; rowH = 0; }
+    it.x = x; it.y = y;
+    x += it.w + gap; rowH = Math.max(rowH, it.h);
+  }
+  const contentW = Math.max(...items.map((it) => it.x + it.w));
+  const contentH = y + rowH;
+  const W = Math.max(contentW + 2 * PAGE_MARGIN, 150);
+  const H = contentH + 2 * PAGE_MARGIN + FOOTER_H;
+  // 横方向は中央寄せ
+  const page = { items, ox: (W - contentW) / 2, oy: PAGE_MARGIN };
+  return { pages: [page], board: { W, H }, usedW: contentW, usedH: contentH };
+}
+
+// 用紙の使用率（面とのりしろの面積 ÷ 印刷できる面積の合計）
+export function paperEfficiency(dec, layout, scale, paper, landscape) {
+  const area = printableArea(paper, landscape);
+  let used = 0;
+  const pa = (pts) => { let a = 0; for (let i = 0; i < pts.length; i++) { const p = pts[i], q = pts[(i + 1) % pts.length]; a += p[0] * q[1] - p[1] * q[0]; } return Math.abs(a) / 2; };
+  for (const pc of dec) {
+    for (const f of pc.faces) used += pa(f.pts);
+    for (const t of pc.tabs) used += pa(t.poly);
+  }
+  used *= scale * scale;
+  const pages = layout.pages.filter((p) => !p.svgBody).length || 1;
+  return used / (pages * area.w * area.h);
 }

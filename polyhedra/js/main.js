@@ -2,8 +2,8 @@
 import { CATEGORIES, ALL_ITEMS, findItem } from './library.js';
 import { fromNotation, parseNotation, OPERATORS, SEEDS } from './conway.js';
 import { analyze, faceColors, classColor, PALETTES } from './analysis.js';
-import { unfoldBest, decorate, foldHinges } from './unfold.js';
-import { PAPERS, printableArea, layoutPages, pageSVG, toDXF, toOBJ, strutPageBody } from './netview.js';
+import { unfoldBest, unfoldSymmetric, decorate, foldHinges } from './unfold.js';
+import { PAPERS, printableArea, layoutPages, layoutBoard, paperEfficiency, pageSVG, toDXF, toOBJ, strutPageBody } from './netview.js';
 import { Viewer3D } from './viewer3d.js';
 import { POLYTOPES } from './four.js';
 import { Mode4D, PROJECTIONS, MODELS } from './mode4d.js';
@@ -18,6 +18,7 @@ const defaults = {
   faces: true, edges: true, vertices: false, opacity: 1, edgeWidth: 0.011, vertexSize: 0.024,
   paper: 'A4', orient: 'p', edgeMM: 25, tabMode: 'one', tabMM: 6, labels: true, colorNet: true, canonical: true,
   autoRotate: true,
+  netView: 'screen', // 型紙パネル: 'screen'（対称性優先）| 'print'（面積効率優先）
   // 四次元
   opacity4: 0.3, proj4: 'schlegel', dist4: 0.4, shrink4: 0.12, model4: 'puzzle', size4D: 150, size4C: 30,
 };
@@ -29,7 +30,7 @@ const state = {
   current: null, // { item, param } または { notation }
   P: null, an: null, colors: null, unf: null, dec: null, layout: null, fold: null,
   variant: 0, netZoom: 1, title: '', titleEn: '', notation: '',
-  mode: '3d', model4: null,
+  mode: '3d', model4: null, dispVariant: 0,
 };
 const is4D = () => state.mode === '4d';
 const CAT4 = { id: '4d', ja: '四次元ポリトープ', en: '4D polytopes', items: POLYTOPES, dim4: true };
@@ -175,7 +176,15 @@ function initControls() {
   $('btn-fold').addEventListener('click', toggleFoldAnim);
 
   // 型紙操作
-  $('btn-reunfold').addEventListener('click', () => { state.variant++; computeNet(); });
+  for (const b of document.querySelectorAll('[data-netview]')) {
+    b.addEventListener('click', () => { settings.netView = b.dataset.netview; save(); syncNetView(); renderNet(); });
+  }
+  syncNetView();
+  $('btn-reunfold').addEventListener('click', () => {
+    // いま見ている側の展開だけを変える
+    if (settings.netView === 'screen') state.dispVariant++; else state.variant++;
+    computeNet();
+  });
   $('net-zoom-in').addEventListener('click', () => setNetZoom(state.netZoom * 1.25));
   $('net-zoom-out').addEventListener('click', () => setNetZoom(state.netZoom / 1.25));
   $('net-zoom-fit').addEventListener('click', () => setNetZoom(1));
@@ -339,7 +348,7 @@ function build(fn, name, en, notation, hash) {
       state.an = analyze(P);
       state.title = name; state.titleEn = en; state.notation = notation;
       state.variant = 0;
-      state.animFold = null;
+      state.dispVariant = 0;
       $('poly-name').textContent = name;
       $('poly-en').textContent = en;
       $('poly-notation').textContent = notation;
@@ -380,26 +389,85 @@ function computeNet(newModel = false) {
   if (!P) return;
   const scale = settings.edgeMM / an.emax; // mm / 単位
   const area = printableArea(settings.paper, settings.orient === 'l');
+  const landscape = settings.orient === 'l';
   const tabMM = settings.tabMode === 'none' ? 0 : settings.tabMM;
-  const unf = unfoldBest(P, an, { maxW: area.w / scale, maxH: area.h / scale, margin: (tabMM + 1) / scale, variant: state.variant, tabH: tabMM / scale });
+  const tabH = tabMM / scale;
+
+  // 画面表示: 対称性を優先（用紙の制約なし）。3D の展開アニメーションも同じ展開を使う
+  const disp = unfoldSymmetric(P, an, { tabH, tabMode: settings.tabMode, variant: state.dispVariant });
+  state.disp = disp;
+  state.dispDec = disp.dec;
+  if (disp.symmetry.mirror) state.dispDec[0].forceAngle = Math.PI / 2 - disp.symmetry.axis;
+  state.board = layoutBoard(state.dispDec, { scale });
+
+  // 印刷: ページ数 → 部品数 → 用紙の使用率 の順に良いものを選ぶ（のりしろの欠けは最優先で避ける）
+  const scoreFn = (res, missing) => {
+    const dec = res.dec || decorate(P, an, res, { tabH, tabMode: settings.tabMode });
+    const lay = layoutPages(dec, { scale, paper: settings.paper, landscape });
+    const eff = paperEfficiency(dec, lay, scale, settings.paper, landscape);
+    return missing * 1e9 + lay.pages.length * 1e7 + res.pieces.length * 1e5 + (1 - eff) * 1e4;
+  };
+  const unf = unfoldBest(P, an, { maxW: area.w / scale, maxH: area.h / scale, margin: (tabMM + 1) / scale, variant: state.variant, tabH, scoreFn });
   state.unf = unf;
-  state.dec = decorate(P, an, unf, { tabH: tabMM / scale, tabMode: settings.tabMode });
-  state.layout = layoutPages(state.dec, { scale, paper: settings.paper, landscape: settings.orient === 'l' });
-  // 3D の展開アニメーションは用紙の制約なしの展開（たいてい1枚）で見せる
-  if (unf.pieces.length === 1) state.fold = foldHinges(P, an, unf);
-  else {
-    if (!state.animFold) state.animFold = foldHinges(P, an, unfoldBest(P, an, {}));
-    state.fold = state.animFold;
-  }
+  state.dec = decorate(P, an, unf, { tabH, tabMode: settings.tabMode });
+  state.layout = layoutPages(state.dec, { scale, paper: settings.paper, landscape });
+  state.efficiency = paperEfficiency(state.dec, state.layout, scale, settings.paper, landscape);
+  state.fold = foldHinges(P, an, disp);
   if (newModel) viewer.setModel(P, an, state.colors, state.fold);
   else viewer.setFoldInfo(state.fold);
   renderNet();
   renderInfo();
 }
 
+function symText(sym) {
+  if (!sym) return '—';
+  if (sym.rot > 1 && sym.mirror) return `${sym.rot}回回転対称＋鏡映`;
+  if (sym.rot > 1) return `${sym.rot}回回転対称`;
+  if (sym.mirror) return '鏡映対称';
+  return '非対称';
+}
+
+function syncNetView() {
+  for (const b of document.querySelectorAll('[data-netview]')) b.setAttribute('aria-selected', String(b.dataset.netview === settings.netView));
+}
+
+// 画面表示（対称性優先）の台紙を描く
+function renderBoard() {
+  const box = $('net-pages');
+  const board = state.board;
+  const dec = state.dispDec;
+  if (!board || !dec) return false;
+  const opt = netOpts();
+  const scroll = $('net-scroll');
+  const avail = Math.max(200, scroll.clientWidth - 40);
+  const width = Math.min(avail, 760) * state.netZoom;
+  box.style.width = width + 'px';
+  const symAll = is4D() ? null : state.disp?.symmetry;
+  box.innerHTML = `
+    <div class="net-sheet">
+      <div class="sheet-head"><span>画面表示 · 対称性を優先 · ${fmt(board.usedW, 0)}×${fmt(board.usedH, 0)} mm</span>
+      <button type="button" data-goto-print>印刷レイアウトを見る</button></div>
+      ${pageSVG(board.pages[0], dec, board, { ...opt, board: board.board, interactive: true, footerNote: '画面表示（対称性優先）。印刷は面積効率を優先した割付になります' })}
+    </div>`;
+  box.querySelector('[data-goto-print]').addEventListener('click', () => { settings.netView = 'print'; save(); syncNetView(); renderNet(); });
+  const pages = state.layout ? state.layout.pages.filter((p) => !p.svgBody).length : 0;
+  const effTxt = state.efficiency ? `（用紙の使用率 ${Math.round(state.efficiency * 100)}%）` : '';
+  if (is4D()) {
+    const res = state.model4;
+    const syms = res && res.groups ? res.groups.map((g) => `${g.label} ${symText(g.symmetry)}`).join(' · ') : '';
+    $('net-summary').innerHTML = `画面表示 · ${syms}` + (res && res.warn ? ` · <span class="warn">${res.warn}</span>` : '');
+  } else {
+    $('net-summary').innerHTML = `対称性 <b>${symText(symAll)}</b> · <b>${dec.length}</b> ピース · 印刷は ${pages} ページ${effTxt}`;
+  }
+  return true;
+}
+
 function renderNet() {
   const box = $('net-pages');
   if (!state.layout) return;
+  // 部材表は印刷と同じ1枚だけ
+  const strut = is4D() && state.model4?.strut;
+  if (settings.netView === 'screen' && !strut && renderBoard()) return;
   const { pages } = state.layout;
   const opt = netOpts();
   const { W, H } = printableArea(settings.paper, settings.orient === 'l');
@@ -426,7 +494,7 @@ function renderNet() {
   const tabs = state.dec.reduce((s, p) => s + p.tabs.length, 0);
   const cuts = state.dec.reduce((s, p) => s + p.labels.length, 0) / 2;
   const missing = settings.tabMode === 'none' ? 0 : cuts - tabs;
-  $('net-summary').innerHTML = `<b>${pieces}</b> ピース · <b>${pages.length}</b> ページ · のりしろ ${tabs}` +
+  $('net-summary').innerHTML = `印刷 · <b>${pieces}</b> ピース · <b>${pages.length}</b> ページ · 用紙の使用率 <b>${Math.round((state.efficiency || 0) * 100)}%</b> · のりしろ ${tabs}` +
     (missing > 0 ? ` · <span class="warn" title="切れ込みが狭く、のりしろが入らない辺です。テープで留めるか「別の展開」を試してください">のりしろなしの辺 ${missing}</span>` : '') +
     (over ? ' · <span class="warn">用紙からはみ出す部分があります。最長辺を小さくしてください</span>' : '');
 }
@@ -701,6 +769,9 @@ function computeNet4() {
   } else {
     state.dec = res.dec;
     state.layout = layoutPages(res.dec, { scale: res.scale, paper: settings.paper, landscape: settings.orient === 'l' });
+    state.efficiency = paperEfficiency(res.dec, state.layout, res.scale, settings.paper, settings.orient === 'l');
+    state.dispDec = res.dispDec;
+    state.board = layoutBoard(res.dispDec, { scale: res.scale });
   }
   renderNet();
   renderInfo4();
@@ -716,7 +787,7 @@ function summary4(pages) {
   }
   const over = pages.some((p) => p.items.some((it) => it.oversize));
   const parts = res.groups.reduce((s, g) => s + g.count, 0);
-  $('net-summary').innerHTML = `型紙 <b>${res.groups.length}</b> 種類 · 部品 <b>${parts}</b> 個 · <b>${pages.length}</b> ページ` + warn +
+  $('net-summary').innerHTML = `印刷 · 型紙 <b>${res.groups.length}</b> 種類 · 部品 <b>${parts}</b> 個 · <b>${pages.length}</b> ページ · 用紙の使用率 <b>${Math.round((state.efficiency || 0) * 100)}%</b>` + warn +
     (over ? ' · <span class="warn">用紙からはみ出す部分があります。大きさを小さくしてください</span>' : '');
 }
 
