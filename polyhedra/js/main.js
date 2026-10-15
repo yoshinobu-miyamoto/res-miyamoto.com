@@ -3,8 +3,10 @@ import { CATEGORIES, ALL_ITEMS, findItem } from './library.js';
 import { fromNotation, parseNotation, OPERATORS, SEEDS } from './conway.js';
 import { analyze, faceColors, classColor, PALETTES } from './analysis.js';
 import { unfoldBest, decorate, foldHinges } from './unfold.js';
-import { PAPERS, printableArea, layoutPages, pageSVG, toDXF, toOBJ } from './netview.js';
+import { PAPERS, printableArea, layoutPages, pageSVG, toDXF, toOBJ, strutPageBody } from './netview.js';
 import { Viewer3D } from './viewer3d.js';
+import { POLYTOPES } from './four.js';
+import { Mode4D, PROJECTIONS, MODELS } from './mode4d.js';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (x, d = 1) => (Number.isFinite(x) ? x.toFixed(d) : '—');
@@ -16,6 +18,8 @@ const defaults = {
   faces: true, edges: true, vertices: false, opacity: 1, edgeWidth: 0.011, vertexSize: 0.024,
   paper: 'A4', orient: 'p', edgeMM: 25, tabMode: 'one', tabMM: 6, labels: true, colorNet: true, canonical: true,
   autoRotate: true,
+  // 四次元
+  opacity4: 0.3, proj4: 'schlegel', dist4: 0.4, shrink4: 0.12, model4: 'puzzle', size4D: 150, size4C: 30,
 };
 let settings = { ...defaults };
 try { Object.assign(settings, JSON.parse(localStorage.getItem(STORE_KEY) || '{}')); } catch { /* 保存不可の環境 */ }
@@ -25,11 +29,16 @@ const state = {
   current: null, // { item, param } または { notation }
   P: null, an: null, colors: null, unf: null, dec: null, layout: null, fold: null,
   variant: 0, netZoom: 1, title: '', titleEn: '', notation: '',
+  mode: '3d', model4: null,
 };
+const is4D = () => state.mode === '4d';
+const CAT4 = { id: '4d', ja: '四次元ポリトープ', en: '4D polytopes', items: POLYTOPES, dim4: true };
+const findAny = (id) => findItem(id) || POLYTOPES.find((p) => p.id === id);
 
 // ---------- 3D ----------
 const viewer = new Viewer3D($('gl'));
 viewer.reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const m4 = new Mode4D(viewer);
 
 // ---------- 初期UI ----------
 function initControls() {
@@ -83,28 +92,65 @@ function initControls() {
     });
   };
   const display = () => viewer.setOptions({
-    faces: settings.faces, edges: settings.edges, vertices: settings.vertices, opacity: settings.opacity,
+    faces: settings.faces, edges: settings.edges, vertices: settings.vertices, opacity: is4D() ? settings.opacity4 : settings.opacity,
     edgeWidth: settings.edgeWidth, vertexSize: settings.vertexSize, edgeColor: settings.edgeColor, autoRotate: settings.autoRotate,
   });
   bind('show-faces', 'faces', { type: 'checked', onChange: display });
   bind('show-edges', 'edges', { type: 'checked', onChange: display });
   bind('show-verts', 'vertices', { type: 'checked', onChange: display });
-  bind('opacity', 'opacity', { onChange: display, fmtOut: (v) => Math.round(v * 100) + '%' });
+  // 不透明度と大きさは 3D / 4D で別々に覚える
+  $('opacity').addEventListener('input', () => {
+    settings[is4D() ? 'opacity4' : 'opacity'] = parseFloat($('opacity').value); save();
+    syncModeInputs(); display();
+  });
+  $('edge-mm').addEventListener('input', () => {
+    const v = parseFloat($('edge-mm').value);
+    if (!Number.isFinite(v) || v <= 0) return;
+    settings[sizeKey()] = v; save();
+    renet();
+  });
+  state.display = display;
   bind('edge-w', 'edgeWidth', { onChange: display, fmtOut: (v) => (v * 100).toFixed(1) });
   bind('vert-s', 'vertexSize', { onChange: display, fmtOut: (v) => (v * 100).toFixed(1) });
   bind('edge-color', 'edgeColor', { onChange: display });
-  const recolor = () => { updateColors(); renderInfo(); renderNet(); };
+  const recolor = () => {
+    if (is4D()) { m4.setOptions({ palette: settings.palette, colorMode: settings.colorMode }); computeNet(); return; }
+    updateColors(); renderInfo(); renderNet();
+  };
   bind('palette', 'palette', { onChange: recolor });
   bind('color-mode', 'colorMode', { onChange: recolor });
   const renet = debounce(() => computeNet(), 180);
+  state.renet = renet;
   bind('paper', 'paper', { onChange: renet });
   bind('orient', 'orient', { onChange: renet });
-  bind('edge-mm', 'edgeMM', { onChange: renet });
   bind('tab-mode', 'tabMode', { onChange: renet });
   bind('tab-mm', 'tabMM', { onChange: renet });
   bind('labels', 'labels', { type: 'checked', onChange: () => renderNet() });
   bind('color-net', 'colorNet', { type: 'checked', onChange: () => renderNet() });
   bind('canonical', 'canonical', { type: 'checked', onChange: () => { if (state.current?.notation) loadNotation(state.current.notation); } });
+
+  // 四次元
+  for (const [k, p] of Object.entries(PROJECTIONS)) $('proj4').add(new Option(p.ja, k));
+  for (const [k, p] of Object.entries(MODELS)) $('model4').add(new Option(p.ja, k));
+  const remodel = debounce(() => { if (is4D()) computeNet(); }, 250);
+  bind('proj4', 'proj4', { onChange: (v) => { m4.setOptions({ projection: v }); sync4Rows(); remodel(); } });
+  bind('dist4', 'dist4', { onChange: (v) => { m4.setOptions({ dist: v }); remodel(); }, fmtOut: (v) => Math.round(v * 100) + '%' });
+  bind('shrink4', 'shrink4', { onChange: (v) => m4.setOptions({ shrink: v }), fmtOut: (v) => Math.round(v * 100) + '%' });
+  bind('model4', 'model4', { onChange: (v) => { m4.setOptions({ model: v }); syncModeInputs(); remodel(); } });
+  $('front4').addEventListener('change', () => { m4.setOptions({ frontType: parseInt($('front4').value, 10) }); remodel(); });
+  for (const k of ['xw', 'yw', 'zw']) {
+    $('rot-' + k).addEventListener('input', () => {
+      const deg = parseFloat($('rot-' + k).value);
+      $('rot-' + k + '-out').textContent = deg + '°';
+      m4.setRotation({ [k]: (deg * Math.PI) / 180 });
+    });
+  }
+  $('spin4').addEventListener('change', () => m4.setSpin($('spin4').checked, showRot4));
+  $('rot4-reset').addEventListener('click', () => {
+    $('spin4').checked = false; m4.setSpin(false);
+    m4.setRotation({ xw: 0, yw: 0, zw: 0 }); showRot4(m4.rot);
+  });
+  syncModeInputs();
   display();
 
   // 表示切り替え
@@ -142,6 +188,7 @@ function initControls() {
     download(fileBase() + '.dxf', 'data:application/dxf;charset=utf-8,' + encodeURIComponent(toDXF(state.layout, state.dec, netOpts())));
   });
   $('btn-obj').addEventListener('click', () => {
+    if (is4D()) { download(fileBase() + '-projection.obj', 'data:text/plain;charset=utf-8,' + encodeURIComponent(toOBJ(m4.projectedOBJ(), state.titleEn))); return; }
     if (!state.P) return;
     download(fileBase() + '.obj', 'data:text/plain;charset=utf-8,' + encodeURIComponent(toOBJ(state.P, state.titleEn || state.title)));
   });
@@ -180,11 +227,11 @@ function renderLibrary(q = '') {
   const box = $('library-list');
   box.innerHTML = '';
   const query = q.trim().toLowerCase();
-  CATEGORIES.forEach((cat, ci) => {
+  [...CATEGORIES, CAT4].forEach((cat, ci) => {
     const items = cat.items.filter((it) => !query || [it.ja, it.en, it.id, it.notation || ''].some((s) => s.toLowerCase().includes(query)));
     if (!items.length) return;
     const det = document.createElement('details');
-    det.className = 'lib-cat';
+    det.className = 'lib-cat' + (cat.dim4 ? ' dim4' : '');
     det.open = !!query || ci < 3 || cat.items.some((it) => it === state.current?.item);
     det.innerHTML = `<summary>${cat.ja}<span class="en">${cat.en}</span><span class="n">${items.length}</span></summary>`;
     const ul = document.createElement('ul');
@@ -195,7 +242,7 @@ function renderLibrary(q = '') {
       b.type = 'button'; b.className = 'lib-item';
       b.dataset.id = it.id;
       if (state.current?.item === it) b.setAttribute('aria-current', 'true');
-      const nt = it.notation || (it.param ? it.id + (it.param === 'f' ? '·f' : '·n') : it.id);
+      const nt = it.dim ? (it.schlafli || '') : it.notation || (it.param ? it.id + (it.param === 'f' ? '·f' : '·n') : it.id);
       b.innerHTML = `<span class="ja">${it.ja}</span><span class="en">${it.en}</span><span class="nt">${nt}</span>`;
       b.addEventListener('click', () => loadItem(it));
       li.appendChild(b);
@@ -215,6 +262,8 @@ function markCurrent() {
 
 // ---------- 読み込み ----------
 function loadItem(item, param) {
+  if (item.dim === 4) { load4D(item, param); return; }
+  leave4D();
   if (item.param) {
     const min = item.min ?? 3, max = item.max ?? 16;
     if (param === undefined) param = state.current?.item === item ? state.current.param : item.def;
@@ -238,6 +287,7 @@ function loadNotation(text) {
   const s = (text || '').replace(/\s+/g, '');
   try { parseNotation(s); } catch (e) { msg.textContent = e.message; msg.classList.add('err'); return; }
   msg.classList.remove('err');
+  leave4D();
   // ライブラリの名前があれば使う
   const named = ALL_ITEMS.find((it) => it.notation === s);
   state.current = { notation: s, item: named };
@@ -299,12 +349,13 @@ function updateColors(apply = true) {
 function netOpts() {
   return {
     colors: state.colors, colorFaces: settings.colorNet, labels: settings.labels,
-    title: state.title, notation: state.notation, edgeMM: settings.edgeMM,
+    title: state.title, notation: state.notation, edgeMM: settings[sizeKey()], sizeLabel: sizeLabel(),
     paper: settings.paper, landscape: settings.orient === 'l',
   };
 }
 
 function computeNet(newModel = false) {
+  if (is4D()) { computeNet4(); return; }
   const { P, an } = state;
   if (!P) return;
   const scale = settings.edgeMM / an.emax; // mm / 単位
@@ -349,6 +400,7 @@ function renderNet() {
       download(`${fileBase()}-p${i + 1}.svg`, 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
     });
   }
+  if (is4D()) { summary4(pages); return; }
   const pieces = state.dec.length;
   const over = state.layout.pages.some((p) => p.items.some((it) => it.oversize));
   const tabs = state.dec.reduce((s, p) => s + p.tabs.length, 0);
@@ -364,6 +416,7 @@ function setNetZoom(z) { state.netZoom = Math.max(0.4, Math.min(4, z)); renderNe
 // ---------- ホバー連動 ----------
 let hlEls = [];
 function hoverFace(f, from) {
+  if (is4D()) { hover4(f, from); return; }
   viewer.setHighlight(f);
   for (const el of hlEls) el.classList.remove('hl');
   hlEls = [];
@@ -390,7 +443,7 @@ function hoverFace(f, from) {
 // ---------- 展開アニメーション ----------
 let foldAnim = null;
 function setFold(t) {
-  viewer.setFold(t);
+  if (is4D()) m4.setFold(t); else viewer.setFold(t);
   $('fold').value = Math.round(t * 1000);
   $('fold-out').textContent = Math.round(t * 100) + '%';
 }
@@ -417,6 +470,7 @@ function playIcon(playing) {
 
 // ---------- 情報 ----------
 function renderInfo() {
+  if (is4D()) { renderInfo4(); return; }
   const an = state.an;
   if (!an) return;
   const scale = settings.edgeMM / an.emax;
@@ -493,14 +547,185 @@ function showBusy(on) { $('busy').hidden = !on; }
 function loadFromHash() {
   const h = decodeURIComponent(location.hash.slice(1));
   if (!h) return false;
-  const direct = findItem(h);
+  const direct = findAny(h);
   if (direct && !direct.param) { loadItem(direct); return true; }
+  const m4h = h.match(/^(.+)n(\d+)$/);
+  if (m4h) {
+    const it = POLYTOPES.find((p) => p.id === m4h[1]);
+    if (it && it.param) { loadItem(it, parseInt(m4h[2], 10)); return true; }
+  }
   const m = h.match(/^([A-Za-z]+?)(\d+)$/);
   if (m) {
     const it = findItem(m[1]);
     if (it && it.param) { loadItem(it, parseInt(m[2], 10)); return true; }
   }
   try { parseNotation(h); loadNotation(h); return true; } catch { return false; }
+}
+
+// ---------- 四次元 ----------
+function sizeKey() {
+  if (!is4D()) return 'edgeMM';
+  return settings.model4 === 'cells' ? 'size4C' : 'size4D';
+}
+function sizeLabel() {
+  if (!is4D()) return '最長辺';
+  return settings.model4 === 'cells' ? '辺の長さ' : '外形の直径';
+}
+function syncModeInputs() {
+  $('edge-mm-label').textContent = sizeLabel();
+  $('edge-mm').value = settings[sizeKey()];
+  const op = is4D() ? settings.opacity4 : settings.opacity;
+  $('opacity').value = op;
+  $('opacity-out').textContent = Math.round(op * 100) + '%';
+}
+function sync4Rows() {
+  const p = settings.proj4;
+  $('row-front4').hidden = p === 'persp-vertex' || p === 'ortho-vertex';
+  $('row-dist4').hidden = p === 'ortho-cell' || p === 'ortho-vertex';
+}
+function showRot4(r) {
+  for (const k of ['xw', 'yw', 'zw']) {
+    const deg = Math.round((r[k] * 180) / Math.PI);
+    $('rot-' + k).value = deg;
+    $('rot-' + k + '-out').textContent = deg + '°';
+  }
+}
+
+function leave4D() {
+  if (!is4D()) return;
+  state.mode = '3d';
+  viewer.fitAll = false;
+  m4.setSpin(false);
+  $('spin4').checked = false;
+  $('block-4d').hidden = true;
+  $('notation-form').closest('.block').hidden = false;
+  document.querySelector('label[for="fold"]').textContent = '展開';
+  stopFoldAnim(); setFold(0);
+  syncModeInputs();
+  state.display();
+}
+
+function load4D(item, param) {
+  if (item.param) {
+    const min = item.min ?? 3, max = item.max ?? 16;
+    if (param === undefined) param = state.current?.item === item ? state.current.param : item.def;
+    param = Math.max(min, Math.min(max, param));
+    $('param-block').hidden = false;
+    $('param-label').textContent = 'n（辺数）';
+    $('param').min = min; $('param').max = max; $('param').value = param;
+    $('param-out').textContent = param;
+  } else {
+    $('param-block').hidden = true;
+  }
+  stopFoldAnim();
+  if (!is4D()) setFold(0);
+  state.mode = '4d';
+  viewer.fitAll = true;
+  state.current = { item, param };
+  state.P = null; state.an = null;
+  $('block-4d').hidden = false;
+  document.querySelector('label[for="fold"]').textContent = '3D展開';
+  syncModeInputs(); sync4Rows();
+  markCurrent();
+  showBusy(true);
+  setTimeout(() => {
+    try {
+      viewer.setFold(0);
+      Object.assign(m4.opts, {
+        projection: settings.proj4, dist: settings.dist4, shrink: settings.shrink4, model: settings.model4,
+        palette: settings.palette, colorMode: settings.colorMode,
+      });
+      m4.load(item, param);
+      m4.setFold($('fold').value / 1000);
+      state.display();
+      const name = item.param ? item.ja.replaceAll('n', param) : item.ja;
+      const en = item.param ? item.en.replaceAll('n', param) : item.en;
+      state.title = name; state.titleEn = en; state.notation = item.schlafli ? item.schlafli.replaceAll('n', param) : '';
+      $('poly-name').textContent = name;
+      $('poly-en').textContent = en;
+      $('poly-notation').textContent = state.notation;
+      const T = m4.T;
+      $('poly-counts').textContent = `V ${T.V.length} · E ${T.edges.length} · F ${T.faces2.length} · C ${T.cells.length}`;
+      document.title = `${name} — Polyhedra Studio`;
+      const hash = item.param ? item.id + 'n' + param : item.id;
+      if (location.hash.slice(1) !== hash) history.replaceState(null, '', '#' + hash);
+      // 手前に置く胞の選択肢
+      const sel = $('front4');
+      sel.innerHTML = '';
+      T.types.forEach((t, i) => sel.add(new Option(`${t.name}（${t.count}）`, i)));
+      sel.value = m4.opts.frontType;
+      computeNet4();
+    } catch (e) {
+      console.error(e);
+      $('net-summary').textContent = 'つくれませんでした: ' + e.message;
+    }
+    showBusy(false);
+  }, 16);
+}
+
+function computeNet4() {
+  if (!m4.T) return;
+  const opt = {
+    paper: settings.paper, landscape: settings.orient === 'l', sizeMM: settings[sizeKey()],
+    tabMode: settings.tabMode, tabMM: settings.tabMM,
+  };
+  const res = m4.buildModel(opt);
+  state.model4 = res;
+  if (res.strut) {
+    const body = strutPageBody(res.strut, {
+      ...opt, title: state.title,
+      subtitle: `${PROJECTIONS[settings.proj4].ja} · 4次元回転 0° の標準投影 · 外形の直径 ${settings.size4D} mm`,
+    });
+    state.dec = [];
+    state.layout = { pages: [{ items: [], svgBody: body }] };
+  } else {
+    state.dec = res.dec;
+    state.layout = layoutPages(res.dec, { scale: res.scale, paper: settings.paper, landscape: settings.orient === 'l' });
+  }
+  renderNet();
+  renderInfo4();
+}
+
+function summary4(pages) {
+  const res = state.model4;
+  if (!res) return;
+  const warn = res.warn ? ` · <span class="warn">${res.warn}</span>` : '';
+  if (res.strut) {
+    $('net-summary').innerHTML = `部材 <b>${res.strut.rows.length}</b> 種類 · <b>${res.strut.edges}</b> 本 · 節点 ${res.strut.V}` + warn;
+    return;
+  }
+  const over = pages.some((p) => p.items.some((it) => it.oversize));
+  const parts = res.groups.reduce((s, g) => s + g.count, 0);
+  $('net-summary').innerHTML = `型紙 <b>${res.groups.length}</b> 種類 · 部品 <b>${parts}</b> 個 · <b>${pages.length}</b> ページ` + warn +
+    (over ? ' · <span class="warn">用紙からはみ出す部分があります。大きさを小さくしてください</span>' : '');
+}
+
+function hover4(f, from) {
+  const info = $('hover-info');
+  if (f < 0 || !m4.T || from === 'net') { viewer.setHighlight(-1); info.hidden = true; return; }
+  viewer.setHighlight(m4.cellFaces(f));
+  const ci = m4.faceCell[f];
+  const c = m4.T.cells[ci];
+  info.innerHTML = `<b>胞 ${ci + 1}</b> · ${m4.T.types[c.type].name}${ci === m4.front ? ' · 手前の胞' : ''}`;
+  info.hidden = false;
+}
+
+function renderInfo4() {
+  if (!m4.T) return;
+  const res = state.model4;
+  let model = '';
+  if (res && res.groups) {
+    model = `<p class="info-h">模型の部品</p><ul class="legend">` +
+      res.groups.map((g) => `<li><span class="sw" style="background:${g.color}"></span><span>${g.label}　${g.name}</span><span class="ct">× ${g.count}</span></li>`).join('') + '</ul>';
+  }
+  $('info').innerHTML = m4.infoHTML(fmt) + model;
+  const hints = {
+    puzzle: '手前の胞が外殻になり、その中を残りの胞の部品で埋めます。',
+    hull: '投影したときの外形（影の形）です。',
+    cells: '本来の形の胞です。数をそろえて作り、3D展開図のように並べられます。',
+    struts: '投影図を棒と節点で組むための部材表です。',
+  };
+  $('size-hint').textContent = hints[settings.model4] || '';
 }
 
 // ---------- 起動 ----------

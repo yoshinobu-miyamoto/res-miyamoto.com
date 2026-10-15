@@ -138,6 +138,13 @@ export class Viewer3D {
     this.dirty = true;
   }
 
+  // 頂点座標だけを差し替える（4次元回転など）
+  updateVertices(vertices) {
+    if (!this.P) return;
+    this.P.vertices = vertices;
+    this._updateGeometry();
+  }
+
   setFold(t) {
     this.fold = Math.max(0, Math.min(1, t));
     if (this.fold === 0) this.orientLock = false;
@@ -153,7 +160,9 @@ export class Viewer3D {
   }
 
   setHighlight(f) {
-    if (f === this.highlight) return;
+    const key = Array.isArray(f) ? f.join(',') : String(f);
+    if (key === this._hlKey) return;
+    this._hlKey = key;
     this.highlight = f;
     this._updateHighlight();
     this.dirty = true;
@@ -216,7 +225,9 @@ export class Viewer3D {
     const s = new THREE.Vector3();
     const dir = new THREE.Vector3();
     const mid = new THREE.Vector3();
-    const er = this.opts.edgeWidth, vr = this.opts.vertexSize;
+    // 4次元の投影は大きさが変わるので、見かけの太さが一定になるよう全体の大きさに比例させる
+    const ks = this.fitAll ? Math.max(0.02, this.extent || 1) : 1;
+    const er = this.opts.edgeWidth * ks, vr = this.opts.vertexSize * ks;
     let i = 0;
     const seen = new Set();
     const showAll = this.fold > 0;
@@ -253,18 +264,21 @@ export class Viewer3D {
 
   _updateHighlight() {
     if (!this.hlMesh) return;
-    const f = this.highlight;
-    if (f < 0 || !this.worldFaces || !this.worldFaces[f]) { this.hlMesh.visible = false; return; }
-    const pts = this.worldFaces[f];
-    let need = (pts.length - 2) * 9;
+    const list = (Array.isArray(this.highlight) ? this.highlight : [this.highlight]).filter((f) => f >= 0 && this.worldFaces && this.worldFaces[f]);
+    if (!list.length) { this.hlMesh.visible = false; return; }
+    let need = 0;
+    for (const f of list) need += (this.worldFaces[f].length - 2) * 9;
     let attr = this.hlGeo.getAttribute('position');
     if (attr.array.length < need) {
       attr = new THREE.BufferAttribute(new Float32Array(need), 3);
       this.hlGeo.setAttribute('position', attr);
     }
     let t = 0;
-    for (let k = 1; k + 1 < pts.length; k++) {
-      for (const p of [pts[0], pts[k], pts[k + 1]]) attr.setXYZ(t++, p.x, p.y, p.z);
+    for (const f of list) {
+      const pts = this.worldFaces[f];
+      for (let k = 1; k + 1 < pts.length; k++) {
+        for (const p of [pts[0], pts[k], pts[k + 1]]) attr.setXYZ(t++, p.x, p.y, p.z);
+      }
     }
     this.hlGeo.setDrawRange(0, t);
     attr.needsUpdate = true;
@@ -392,7 +406,7 @@ export class Viewer3D {
       }
     }
     // 展開時は全体が収まるよう距離を調整
-    const ext = Math.max(1, (this.extent || 1) * 0.92);
+    const ext = this.fitAll ? Math.max(0.02, this.extent || 1) : Math.max(1, (this.extent || 1) * 0.92);
     const aspectFit = Math.min(1, this.camera.aspect * 1.08);
     const target = (this.baseDist * ext) / this.zoom / aspectFit;
     const z = this.camera.position.z;

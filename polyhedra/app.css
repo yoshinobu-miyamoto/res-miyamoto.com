@@ -106,7 +106,7 @@ select, input[type="number"], input[type="text"], input[type="search"] {
 }
 input[type="number"] { font-family: var(--mono); }
 
-.toggles { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 6px 0 10px; }
+.toggles { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: 6px 0 10px; }
 .check { display: flex; align-items: center; gap: 6px; color: var(--text); font-size: 12px; cursor: pointer; }
 .check input { accent-color: var(--gold); margin: 0; }
 .block > .check { margin-top: 10px; color: var(--muted); }
@@ -220,6 +220,7 @@ input[type="number"] { font-family: var(--mono); }
 .net-sheet .sheet-head button:hover { color: var(--gold); }
 .net-sheet svg { display: block; width: 100%; height: auto; box-shadow: 0 8px 28px var(--paper-shadow), 0 0 0 1px rgba(0,0,0,.3); border-radius: 1px; }
 .net-sheet line, .net-sheet text { pointer-events: none; }
+.lib-cat.dim4 > summary { color: var(--gold); }
 .net-sheet polygon[data-f] { cursor: pointer; transition: fill-opacity .1s; }
 .net-sheet polygon[data-f].hl { fill: #f3d995 !important; }
 
@@ -235,6 +236,7 @@ input[type="number"] { font-family: var(--mono); }
 
 /* 情報パネル */
 .info-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin-bottom: 12px; }
+.info-grid.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .info-grid div { background: var(--panel-2); border-radius: 6px; padding: 6px 4px; text-align: center; }
 .info-grid b { display: block; font-family: var(--mono); font-weight: 500; font-size: 15px; font-variant-numeric: tabular-nums; }
 .info-grid span { color: var(--muted); font-size: 10.5px; }

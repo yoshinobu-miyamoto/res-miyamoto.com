@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Polyhedra Studio — RES Miyamoto</title>
-  <meta name="description" content="多面体を3Dで眺め、コンウェイ演算で形を生み、紙模型の型紙（のりしろ・番号・山谷折り付き）を書き出すスタジオ。">
+  <meta name="description" content="多面体と四次元ポリトープを3Dで眺め、コンウェイ演算で形を生み、紙模型の型紙（のりしろ・番号・山谷折り付き）を書き出すスタジオ。">
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -55,6 +55,7 @@
           <li>「型紙」で用紙と最長辺の長さを決めます。</li>
           <li>「印刷 / PDF」で実寸（100%）印刷。実線で切り、破線で折り、同じ番号の辺どうしを貼り合わせます。</li>
         </ol>
+        <p class="hint">「四次元ポリトープ」では、シュレーゲル図などの3次元投影を4次元回転できます。模型は、投影した胞を組み合わせる立体パズル、投影の外形、胞の実形、棒模型の部材表から選べます。</p>
         <dl class="kv help-keys">
           <dt>回転</dt><dd>ドラッグ（はじくと回り続けます）</dd>
           <dt>拡大・縮小</dt><dd>ホイール / ピンチ</dd>
@@ -126,6 +127,24 @@
         </div>
       </section>
 
+      <section class="block" id="block-4d" hidden>
+        <h2 class="block-title">四次元 <span class="en">4D projection</span></h2>
+        <div class="row"><label for="proj4">投影</label><select id="proj4"></select></div>
+        <div class="row" id="row-front4"><label for="front4">手前の胞</label><select id="front4"></select></div>
+        <div class="row" id="row-dist4"><label for="dist4">視点の距離</label><input type="range" id="dist4" min="0.02" max="0.98" step="0.01" value="0.4"><output id="dist4-out"></output></div>
+        <div class="row"><label for="shrink4">胞の縮小</label><input type="range" id="shrink4" min="0" max="0.45" step="0.01" value="0.12"><output id="shrink4-out"></output></div>
+        <p class="info-h">4次元回転</p>
+        <div class="row"><label for="rot-xw">XW 平面</label><input type="range" id="rot-xw" min="-180" max="180" step="1" value="0"><output id="rot-xw-out">0°</output></div>
+        <div class="row"><label for="rot-yw">YW 平面</label><input type="range" id="rot-yw" min="-180" max="180" step="1" value="0"><output id="rot-yw-out">0°</output></div>
+        <div class="row"><label for="rot-zw">ZW 平面</label><input type="range" id="rot-zw" min="-180" max="180" step="1" value="0"><output id="rot-zw-out">0°</output></div>
+        <div class="toggles">
+          <label class="check"><input type="checkbox" id="spin4"> 4次元で回し続ける</label>
+          <button type="button" class="btn" id="rot4-reset">回転を 0° に戻す</button>
+        </div>
+        <div class="row"><label for="model4">模型</label><select id="model4"></select></div>
+        <p class="hint" id="hint4">「展開」スライダーで、胞が3次元の展開図に開きます。模型は4次元回転 0° の標準投影から作ります。</p>
+      </section>
+
       <details class="block" open>
         <summary class="block-title">表示 <span class="en">Display</span></summary>
         <div class="toggles">
@@ -159,7 +178,7 @@
           <select id="paper"></select>
           <select id="orient" aria-label="用紙の向き"><option value="p">縦</option><option value="l">横</option></select>
         </div>
-        <div class="row"><label for="edge-mm">最長辺</label><input type="number" id="edge-mm" min="5" max="400" step="1" value="25"><span class="unit">mm</span></div>
+        <div class="row"><label for="edge-mm" id="edge-mm-label">最長辺</label><input type="number" id="edge-mm" min="5" max="400" step="1" value="25"><span class="unit">mm</span></div>
         <p class="hint" id="size-hint"></p>
         <div class="row"><label for="tab-mode">のりしろ</label>
           <select id="tab-mode"><option value="one">片側に付ける</option><option value="none">付けない</option></select>
