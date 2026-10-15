@@ -232,8 +232,15 @@ function renderLibrary(q = '') {
     if (!items.length) return;
     const det = document.createElement('details');
     det.className = 'lib-cat' + (cat.dim4 ? ' dim4' : '');
-    det.open = !!query || ci < 3 || cat.items.some((it) => it === state.current?.item);
-    det.innerHTML = `<summary>${cat.ja}<span class="en">${cat.en}</span><span class="n">${items.length}</span></summary>`;
+    // 広い画面では主要な3種を開き、狭い画面では見出しだけを並べて見渡せるようにする
+    const wide = window.matchMedia('(min-width: 921px)').matches;
+    det.open = !!query || (wide && ci < 3) || cat.items.some((it) => it === state.current?.item);
+    // 閉じているときは中身を一行で予告する（先頭の数件と残りの件数、選択中の項目）
+    const cur = items.find((it) => it === state.current?.item);
+    const head = items.slice(0, 3).map((it) => it.ja).join('・');
+    const rest = items.length > 3 ? ` ほか ${items.length - 3}` : '';
+    const peek = cur ? `<span class="cur">選択中: ${cur.ja}</span>` : `${head}${rest}`;
+    det.innerHTML = `<summary><span class="mk" aria-hidden="true"></span><span class="ttl">${cat.ja}<span class="en">${cat.en}</span></span><span class="n" title="${items.length} 項目">${items.length}</span><span class="peek">${peek}</span></summary>`;
     const ul = document.createElement('ul');
     ul.className = 'lib-items';
     for (const it of items) {
@@ -254,6 +261,19 @@ function renderLibrary(q = '') {
 }
 
 function markCurrent() {
+  // 閉じたカテゴリの予告行にも選択中の項目を出す
+  for (const det of document.querySelectorAll('.lib-cat')) {
+    const peek = det.querySelector('.peek');
+    const b = state.current?.item && det.querySelector(`.lib-item[data-id="${state.current.item.id}"]`);
+    if (!peek) continue;
+    if (!peek.dataset.base) peek.dataset.base = peek.querySelector('.cur') ? '' : peek.innerHTML;
+    if (b) {
+      peek.innerHTML = `<span class="cur">選択中: ${state.current.item.ja}</span>`;
+      // 選択中の項目を含むカテゴリは開いておく
+      if (!det.open && !det.dataset.autoOpened) { det.open = true; det.dataset.autoOpened = '1'; }
+    }
+    else if (peek.dataset.base) peek.innerHTML = peek.dataset.base;
+  }
   for (const b of document.querySelectorAll('.lib-item')) {
     b.toggleAttribute('aria-current', state.current?.item?.id === b.dataset.id);
     if (state.current?.item?.id === b.dataset.id) b.setAttribute('aria-current', 'true');
