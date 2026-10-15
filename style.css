@@ -168,6 +168,81 @@ body {
   border: none;
 }
 
+/* ---------- Studio link ---------- */
+.studio {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 0;
+}
+
+.studio-link {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  padding: 1.4rem 0;
+  border-top: 1px solid #2a2a2a;
+  border-bottom: 1px solid #2a2a2a;
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.3s ease;
+}
+
+.studio-mark {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+  transition: transform 0.6s ease;
+}
+
+.studio-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.studio-title {
+  font-family: var(--serif);
+  font-size: clamp(1.2rem, 2.6vw, 1.5rem);
+  letter-spacing: 0.12em;
+}
+
+.studio-jp {
+  font-family: 'Noto Serif JP', serif;
+  font-size: clamp(0.78rem, 1.6vw, 0.88rem);
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  line-height: 1.7;
+}
+
+.studio-arrow {
+  margin-left: auto;
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  color: var(--gold);
+  transition: transform 0.3s ease;
+}
+
+.studio-link:hover,
+.studio-link:focus-visible {
+  border-color: var(--gold);
+  outline: none;
+}
+
+.studio-link:hover .studio-mark,
+.studio-link:focus-visible .studio-mark {
+  transform: rotate(30deg);
+}
+
+.studio-link:hover .studio-arrow,
+.studio-link:focus-visible .studio-arrow {
+  transform: translateX(4px);
+}
+
 /* ---------- Coming 2026 ---------- */
 .coming {
   text-align: center;
@@ -274,5 +349,25 @@ body {
   .gallery img {
     width: 100%;
     flex: none;
+  }
+
+  .studio {
+    padding: 0.5rem 1rem 0;
+  }
+
+  .studio-link {
+    gap: 1rem;
+  }
+
+  .studio-mark {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-mark,
+  .studio-arrow {
+    transition: none;
   }
 }
