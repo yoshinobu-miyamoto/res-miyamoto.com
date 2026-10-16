@@ -305,7 +305,7 @@ body {
   transform: translateX(4px);
 }
 
-/* ---------- Coming 2026 ---------- */
+/* ---------- Now in Preview（旧 Coming 2026） ---------- */
 .coming {
   text-align: center;
   padding: 3rem 1.5rem 5rem;
@@ -318,6 +318,18 @@ body {
   letter-spacing: 0.4em;
   text-transform: uppercase;
   color: var(--gold);
+}
+
+.coming-note {
+  margin-top: 1rem;
+  font-family: 'Noto Serif JP', serif;
+  font-size: clamp(0.85rem, 2vw, 1rem);
+  color: var(--muted);
+  letter-spacing: 0.15em;
+}
+
+.coming-note .nb {
+  display: inline-block; /* 意味の切れ目でだけ折り返す */
 }
 
 /* ---------- Gallery (secondary images) ---------- */
