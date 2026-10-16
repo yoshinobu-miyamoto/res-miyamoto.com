@@ -69,6 +69,14 @@ button, input, select { font: inherit; color: inherit; }
 .brand-name { font-family: var(--display); font-size: 21px; letter-spacing: 0.06em; white-space: nowrap; }
 .brand-sub { font-family: var(--display); font-style: italic; color: var(--gold); font-size: 15px; letter-spacing: 0.06em; white-space: nowrap; }
 
+.top-actions { display: flex; align-items: center; gap: 10px; }
+.demo-btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 10px; border-radius: 999px; cursor: pointer;
+  border: 1px solid rgba(196, 162, 101, 0.55); background: transparent; color: var(--gold); font-size: 12px; letter-spacing: 0.12em;
+  transition: background-color .2s, color .2s;
+}
+.demo-btn svg { width: 11px; height: 11px; fill: currentColor; }
+.demo-btn:hover { background: var(--gold); color: #1a1710; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--panel); }
 .seg button {
   border: 0; background: transparent; padding: 4px 14px; border-radius: 999px; cursor: pointer;
@@ -263,6 +271,40 @@ input[type="number"] { font-family: var(--mono); }
 .busy {
   position: absolute; right: 14px; bottom: 14px; background: rgba(15,15,14,.85); border: 1px solid var(--line);
   border-radius: 999px; padding: 4px 12px; font-size: 11px; color: var(--gold);
+}
+
+/* ---------- デモ・モード ---------- */
+.demo-idle { margin-top: 10px; color: var(--muted); }
+body.demo .app { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "stage"; }
+body.demo .library, body.demo .inspector, body.demo .title-block, body.demo .tools-3d, body.demo .hover-info { display: none !important; }
+body.demo .stage { height: auto; }
+body.demo .gl canvas { cursor: default; }
+.demo-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.demo-intro, .demo-caption { position: absolute; opacity: 0; transition: opacity .9s ease, transform .9s ease; }
+.demo-intro {
+  inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px;
+  background: radial-gradient(70% 60% at 50% 50%, rgba(12, 12, 11, 0.86) 0%, rgba(12, 12, 11, 0.55) 70%, rgba(12, 12, 11, 0) 100%);
+  transform: scale(0.98); padding: 0 24px;
+}
+.demo-overlay.show-intro .demo-intro { opacity: 1; transform: none; }
+.demo-intro-name { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(40px, 7vw, 84px); letter-spacing: 0.08em; color: var(--text); }
+.demo-intro-sub { margin: 0; font-family: var(--display); font-style: italic; font-size: clamp(18px, 2.6vw, 28px); color: var(--gold); letter-spacing: 0.05em; }
+.demo-intro-ja { margin: 6px 0 0; font-family: var(--serif-ja); font-size: clamp(12px, 1.5vw, 15px); letter-spacing: 0.3em; color: var(--muted); }
+.demo-intro-desc { margin: 14px 0 0; font-family: var(--serif-ja); font-size: clamp(13px, 1.6vw, 16px); line-height: 1.9; color: var(--text); }
+.demo-overlay .nb { display: inline-block; }
+.demo-caption { left: max(28px, env(safe-area-inset-left, 0px)); bottom: 84px; max-width: min(520px, calc(100% - 56px)); transform: translateY(8px); }
+.demo-overlay.show-scene .demo-caption { opacity: 1; transform: none; }
+.demo-count { margin: 0 0 6px; font-family: var(--mono); font-size: 11px; color: var(--gold); letter-spacing: 0.1em; }
+.demo-ja { margin: 0; font-family: var(--serif-ja); font-weight: 500; font-size: clamp(22px, 3vw, 34px); letter-spacing: 0.12em; color: var(--text); text-shadow: 0 2px 16px rgba(0,0,0,.6); }
+.demo-en { margin: 2px 0 10px; font-family: var(--display); font-style: italic; font-size: clamp(16px, 2vw, 22px); color: var(--gold); }
+.demo-note { margin: 0; font-size: 13px; line-height: 1.8; color: var(--text); opacity: .85; text-shadow: 0 1px 10px rgba(0,0,0,.7); }
+.demo-progress { position: absolute; left: 0; right: 0; top: 0; height: 2px; background: rgba(196, 162, 101, 0.15); }
+.demo-progress span { display: block; height: 100%; width: 0; background: var(--gold); transition: width .8s ease; }
+.demo-exit { position: absolute; right: 18px; top: 14px; margin: 0; font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
+@media (max-width: 920px) {
+  body.demo .stage { height: calc(100dvh - 60px); min-height: 420px; }
+  .demo-caption { bottom: 76px; }
+  .demo-exit { right: 12px; }
 }
 
 /* 使い方 */
