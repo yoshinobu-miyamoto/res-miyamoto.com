@@ -309,6 +309,82 @@ body {
   color: var(--bg-deep);
 }
 
+/* Hyperfolder のカード: 主ボタンのリンクをカード全体に広げ、デモのボタンだけは別に押せる */
+.studio-card {
+  position: relative;
+}
+
+.studio-card:focus-within {
+  border-color: var(--gold);
+}
+
+.studio-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.studio-cta-main {
+  text-decoration: none;
+}
+
+.studio-cta-main::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.studio-cta-main:focus-visible {
+  outline: none;
+}
+
+.studio-cta-demo {
+  position: relative;
+  z-index: 1;
+  border-color: rgba(196, 162, 101, 0.55);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.studio-cta-demo svg {
+  width: 0.7rem;
+  height: 0.7rem;
+  fill: var(--gold);
+  transition: fill 0.3s ease;
+}
+
+/* カードに重ねたときは主ボタンだけを塗る */
+.studio-card:hover .studio-cta-demo {
+  background: transparent;
+  color: var(--text);
+}
+
+.studio-card .studio-cta-demo:hover,
+.studio-card .studio-cta-demo:focus-visible {
+  background: var(--gold);
+  color: var(--bg-deep);
+  outline: none;
+}
+
+.studio-card .studio-cta-demo:hover svg,
+.studio-card .studio-cta-demo:focus-visible svg {
+  fill: var(--bg-deep);
+}
+
+.studio-card:focus-within .studio-figure img {
+  transform: scale(1.04);
+  filter: brightness(1.05) contrast(1.06);
+}
+
+.studio-demo-note {
+  margin-top: 0.2rem;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
 .studio-link:hover .studio-cta span,
 .studio-link:focus-visible .studio-cta span {
   transform: translateX(4px);

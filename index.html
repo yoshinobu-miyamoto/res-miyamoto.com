@@ -83,7 +83,7 @@
 
   <!-- ===== STUDIO ===== -->
   <section class="studio fade-in delay-5" aria-labelledby="studio-title">
-    <a class="studio-link" href="polyhedra/">
+    <div class="studio-link studio-card">
       <span class="studio-figure">
         <img
           src="polyhedra/studio-120cell.webp"
@@ -102,9 +102,16 @@
           <span class="nb">三次元の多面体と</span><span class="nb">四次元のポリトープを眺め、</span><span class="nb">展開し、</span><span class="nb">紙でふたたび折り上げる。</span>
         </span>
         <span class="studio-desc-en"><span class="nb">Explore 3D polyhedra and 4D polytopes,</span> <span class="nb">unfold them, and fold them again in paper.</span></span>
-        <span class="studio-cta">旅をはじめる <span aria-hidden="true">&rarr;</span></span>
+        <span class="studio-actions">
+          <!-- カード全体を押してもアプリが開く（::after で広げたリンク） -->
+          <a class="studio-cta studio-cta-main" href="polyhedra/">旅をはじめる <span aria-hidden="true">&rarr;</span></a>
+          <a class="studio-cta studio-cta-demo" href="polyhedra/#demo">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg>デモを見る
+          </a>
+        </span>
+        <span class="studio-demo-note">代表例を約1分半で自動再生します</span>
       </span>
-    </a>
+    </div>
 
     <!-- 『フラットランド』へのオマージュ -->
     <figure class="studio-epigraph">
