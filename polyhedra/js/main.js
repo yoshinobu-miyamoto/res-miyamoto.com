@@ -1,4 +1,4 @@
-// main.js — Polyhedra Studio の画面制御
+// main.js — Hyperfolder の画面制御
 import { CATEGORIES, ALL_ITEMS, findItem } from './library.js';
 import { fromNotation, parseNotation, OPERATORS, SEEDS } from './conway.js';
 import { analyze, faceColors, classColor, PALETTES } from './analysis.js';
@@ -354,7 +354,7 @@ function build(fn, name, en, notation, hash) {
       $('poly-notation').textContent = notation;
       $('poly-counts').textContent = `V ${state.an.V} · E ${state.an.E} · F ${state.an.F}`;
       if (notation) $('notation-input').value = notation;
-      document.title = `${name} — Polyhedra Studio`;
+      document.title = `${name} — Hyperfolder`;
       if (hash && location.hash.slice(1) !== hash) history.replaceState(null, '', '#' + hash);
       updateColors(false);
       computeNet(true);
@@ -734,7 +734,7 @@ function load4D(item, param) {
       $('poly-notation').textContent = state.notation;
       const T = m4.T;
       $('poly-counts').textContent = `V ${T.V.length} · E ${T.edges.length} · F ${T.faces2.length} · C ${T.cells.length}`;
-      document.title = `${name} — Polyhedra Studio`;
+      document.title = `${name} — Hyperfolder`;
       const hash = item.param ? item.id + 'n' + param : item.id;
       if (location.hash.slice(1) !== hash) history.replaceState(null, '', '#' + hash);
       // 手前に置く胞の選択肢

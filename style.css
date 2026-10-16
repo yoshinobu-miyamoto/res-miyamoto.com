@@ -237,6 +237,15 @@ body {
   line-height: 1.15;
 }
 
+.studio-sub {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  margin-top: -0.2rem;
+}
+
 .studio-jp {
   font-family: 'Noto Serif JP', serif;
   font-size: clamp(0.9rem, 1.8vw, 1.05rem);
@@ -303,6 +312,49 @@ body {
 .studio-link:hover .studio-cta span,
 .studio-link:focus-visible .studio-cta span {
   transform: translateX(4px);
+}
+
+/* 『フラットランド』へのオマージュ（カードの下に添える引用） */
+.studio-epigraph {
+  max-width: 640px;
+  margin: 2.2rem auto 0.5rem;
+  padding: 0 1rem;
+  text-align: center;
+}
+
+.studio-epigraph blockquote {
+  margin: 0;
+}
+
+.studio-epigraph p {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(0.98rem, 2vw, 1.12rem);
+  line-height: 1.85;
+  color: var(--text);
+  opacity: 0.85;
+}
+
+.studio-epigraph p.ja {
+  margin-top: 0.8rem;
+  font-family: 'Noto Serif JP', serif;
+  font-style: normal;
+  font-size: clamp(0.82rem, 1.7vw, 0.92rem);
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  opacity: 1;
+}
+
+.studio-epigraph figcaption {
+  margin-top: 1rem;
+  font-family: var(--serif);
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+}
+
+.studio-epigraph .nb {
+  display: inline-block; /* 意味の切れ目でだけ折り返す */
 }
 
 /* ---------- Now in Preview（旧 Coming 2026） ---------- */
