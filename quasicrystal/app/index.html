@@ -556,9 +556,11 @@
 
                         const comboKey = `${i},${j},${k},${isLeftHanded}`;
 
-                        for(let ni=-maxNi; ni<=maxNi; ni++){
-                            for(let nj=-maxNj; nj<=maxNj; nj++){
-                                for(let nk=-maxNk; nk<=maxNk; nk++){
+                        // 公開版の修正: 位相で γ が大きくなっても必要な格子番号を取りこぼさないよう、
+                        // 探索範囲を γ の分だけずらす（幅は原本と同じ）
+                        for(let ni=-maxNi-Math.ceil(gamma[i]); ni<=maxNi-Math.floor(gamma[i]); ni++){
+                            for(let nj=-maxNj-Math.ceil(gamma[j]); nj<=maxNj-Math.floor(gamma[j]); nj++){
+                                for(let nk=-maxNk-Math.ceil(gamma[k]); nk<=maxNk-Math.floor(gamma[k]); nk++){
                                     const b = [ni + gamma[i], nj + gamma[j], nk + gamma[k]];
                                     const pt = solve3x3(v[i], v[j], v[k], b);
                                     if(!pt) continue;
