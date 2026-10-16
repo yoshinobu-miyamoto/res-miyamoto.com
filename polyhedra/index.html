@@ -20,10 +20,15 @@
       <span class="brand-name">Hyperfolder</span>
       <span class="brand-sub">Between Dimensions</span>
     </a>
+    <div class="top-actions">
+    <button type="button" class="demo-btn" id="btn-demo" title="代表例を自動で見せる自己紹介モード（クリックやキーで終了）">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg><span>デモ</span>
+    </button>
     <div class="seg" role="tablist" aria-label="表示の切り替え">
       <button type="button" id="view-3d" data-view="3d" role="tab">立体</button>
       <button type="button" id="view-split" data-view="split" role="tab">分割</button>
       <button type="button" id="view-net" data-view="net" role="tab">展開図</button>
+    </div>
     </div>
   </header>
 
@@ -60,6 +65,7 @@
           <dt>拡大・縮小</dt><dd>ホイール / ピンチ</dd>
           <dt>視点リセット</dt><dd>ダブルクリック</dd>
           <dt>面の対応</dt><dd>面にカーソルを置く</dd>
+          <dt>デモ</dt><dd>ヘッダーの「デモ」で代表例を自動再生。URL の末尾に #demo を付けると、開いてすぐ始まります（展示用）</dd>
         </dl>
       </section>
     </div>
@@ -86,6 +92,23 @@
         </button>
       </div>
       <div class="hover-info" id="hover-info" hidden></div>
+      <!-- デモ・モード（自己紹介） -->
+      <div class="demo-overlay" id="demo-overlay" hidden aria-live="polite">
+        <div class="demo-intro">
+          <p class="demo-intro-name">Hyperfolder</p>
+          <p class="demo-intro-sub">Between the Dimensions</p>
+          <p class="demo-intro-ja">ハイパーフォールダー — 次元のあいだを旅する</p>
+          <p class="demo-intro-desc"><span class="nb">三次元の多面体と四次元のポリトープを眺め、</span><span class="nb">展開し、紙でふたたび折り上げる。</span></p>
+        </div>
+        <div class="demo-caption">
+          <p class="demo-count"></p>
+          <h2 class="demo-ja"></h2>
+          <p class="demo-en"></p>
+          <p class="demo-note"></p>
+        </div>
+        <div class="demo-progress"><span></span></div>
+        <p class="demo-exit">クリック・キー・タップでデモを終了</p>
+      </div>
       <div class="foldbar">
         <button type="button" class="icon-btn play" id="btn-fold" title="展開アニメーション">
           <svg viewBox="0 0 24 24" class="i-play"><path d="M8 5l11 7-11 7z"/></svg>
@@ -173,6 +196,7 @@
             <option value="#f3efe6">白</option>
           </select>
         </div>
+        <label class="check demo-idle"><input type="checkbox" id="demo-idle"> 90秒操作がないとデモを再生</label>
       </details>
 
       <details class="block" open>

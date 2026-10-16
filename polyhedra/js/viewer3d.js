@@ -352,6 +352,13 @@ export class Viewer3D {
 
   setZoom(z) { this.zoom = Math.max(0.35, Math.min(4, z)); this.dirty = true; }
 
+  // 初めの向きを指定する（オイラー角 [x, y, z]）
+  setOrientation(e) {
+    this.model.quaternion.setFromEuler(new THREE.Euler(e[0], e[1], e[2]));
+    this.angularVel.set(0, 0, 0);
+    this.dirty = true;
+  }
+
   resetView() {
     this.model.quaternion.setFromEuler(new THREE.Euler(0.42, -0.6, 0.08));
     this.zoom = 1; this.angularVel.set(0, 0, 0); this.dirty = true;

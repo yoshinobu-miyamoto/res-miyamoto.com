@@ -7,6 +7,7 @@ import { PAPERS, printableArea, layoutPages, layoutBoard, paperEfficiency, pageS
 import { Viewer3D } from './viewer3d.js';
 import { POLYTOPES } from './four.js';
 import { Mode4D, PROJECTIONS, MODELS } from './mode4d.js';
+import { Demo } from './demo.js';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (x, d = 1) => (Number.isFinite(x) ? x.toFixed(d) : '—');
@@ -19,6 +20,7 @@ const defaults = {
   paper: 'A4', orient: 'p', edgeMM: 25, tabMode: 'one', tabMM: 6, labels: true, colorNet: true, canonical: true,
   autoRotate: true,
   netView: 'screen', // 型紙パネル: 'screen'（対称性優先）| 'print'（面積効率優先）
+  demoIdle: true,    // 一定時間操作がないとデモを再生
   // 四次元
   opacity4: 0.3, proj4: 'schlegel', dist4: 0.4, shrink4: 0.12, model4: 'puzzle', size4D: 150, size4C: 30,
 };
@@ -155,7 +157,7 @@ function initControls() {
   display();
 
   // 表示切り替え
-  for (const b of document.querySelectorAll('.seg button')) {
+  for (const b of document.querySelectorAll('.seg button[data-view]')) {
     b.addEventListener('click', () => setView(b.dataset.view));
   }
   setView(settings.view);
@@ -221,13 +223,14 @@ function initControls() {
   pages.addEventListener('pointerout', (e) => { if (e.target?.dataset?.f !== undefined) hoverFace(-1, 'net'); });
   viewer.onHover = (f) => hoverFace(f, '3d');
 
-  window.addEventListener('hashchange', () => loadFromHash());
+  bind('demo-idle', 'demoIdle', { type: 'checked' });
+  window.addEventListener('hashchange', () => { if (location.hash === '#demo') startDemo(); else loadFromHash(); });
 }
 
 function setView(v) {
   settings.view = v; save();
   $('stage').dataset.view = v;
-  for (const b of document.querySelectorAll('.seg button')) b.setAttribute('aria-selected', String(b.dataset.view === v));
+  for (const b of document.querySelectorAll('.seg button[data-view]')) b.setAttribute('aria-selected', String(b.dataset.view === v));
   if (v !== '3d') requestAnimationFrame(() => renderNet());
 }
 
@@ -341,7 +344,9 @@ function describeNotationJa(s) {
 
 function build(fn, name, en, notation, hash) {
   showBusy(true);
+  const req = state.current; // 後から別の形が指定されたら、この結果は使わない
   setTimeout(() => {
+    if (state.current !== req) return;
     try {
       const P = fn();
       state.P = P;
@@ -716,7 +721,9 @@ function load4D(item, param) {
   syncModeInputs(); sync4Rows();
   markCurrent();
   showBusy(true);
+  const req = state.current; // 後から別の形が指定されたら、この結果は使わない
   setTimeout(() => {
+    if (state.current !== req) return;
     try {
       viewer.setFold(0);
       Object.assign(m4.opts, {
@@ -819,8 +826,103 @@ function renderInfo4() {
   $('size-hint').textContent = hints[settings.model4] || '';
 }
 
+// ---------- デモ・モード（自己紹介） ----------
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let demoPrev = null;
+const waitReady = (item) => new Promise((resolve) => {
+  const t0 = performance.now();
+  const poll = () => {
+    const ready = $('busy').hidden && state.current?.item === item;
+    if (ready || performance.now() - t0 > 20000) resolve(); else setTimeout(poll, 50);
+  };
+  setTimeout(poll, 30);
+});
+const demo = new Demo({
+  async load(id, param, view) {
+    const it = findAny(id);
+    if (!it) return;
+    loadItem(it, param);
+    await waitReady(it);
+    viewer.resetView();
+    if (view) viewer.setOrientation(view);
+  },
+  setFold: (t) => setFold(t),
+  setSpin4: (on) => { m4.setSpin(on, showRot4); $('spin4').checked = on; },
+  rot4Zero: () => { m4.setRotation({ xw: 0, yw: 0, zw: 0 }); showRot4(m4.rot); },
+  enter() {
+    // デモ前の状態を覚えておき、終了時に戻す
+    demoPrev = { view: settings.view, current: state.current ? { ...state.current } : null };
+    stopFoldAnim();
+    document.body.classList.add('demo');
+    $('btn-demo').querySelector('span').textContent = '終了';
+    setView('3d');
+    viewer.setOptions({ autoRotate: true });
+    hoverFace(-1, '3d');
+    window.scrollTo(0, 0);
+  },
+  leave() {
+    document.body.classList.remove('demo');
+    $('btn-demo').querySelector('span').textContent = 'デモ';
+    setFold(0);
+    if (demoPrev) {
+      setView(demoPrev.view);
+      const c = demoPrev.current;
+      if (c?.notation) loadNotation(c.notation);
+      else if (c?.item) loadItem(c.item, c.param);
+    }
+    state.display();
+    viewer.resetView();
+  },
+}, $('demo-overlay'));
+
+let lastActivity = performance.now();
+let demoStartedAt = 0;
+let demoPointer = null;
+function startDemo() {
+  if (demo.running) return;
+  demoStartedAt = performance.now();
+  demoPointer = null;
+  demo.start();
+}
+function stopDemo(e) {
+  demo.stop();
+  lastActivity = performance.now();
+  // 終了のためのクリックが、下にあるボタンなどに届かないようにする
+  if (e && (e.type === 'pointerdown' || e.type === 'touchstart')) {
+    const block = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+    window.addEventListener('click', block, { capture: true, once: true });
+    setTimeout(() => window.removeEventListener('click', block, { capture: true }), 500);
+  }
+}
+const onActivity = (e) => {
+  lastActivity = performance.now();
+  if (!demo.running || performance.now() - demoStartedAt < 900) return;
+  if (e.type === 'pointermove') {
+    // 小さな手ぶれでは終了しない
+    if (!demoPointer) { demoPointer = [e.clientX, e.clientY]; return; }
+    if (Math.hypot(e.clientX - demoPointer[0], e.clientY - demoPointer[1]) < 40) return;
+  }
+  stopDemo(e);
+};
+for (const t of ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart']) {
+  window.addEventListener(t, onActivity, { capture: true, passive: true });
+}
+// 操作がないまま一定時間たったら自動で始める
+setInterval(() => {
+  if (demo.running || !settings.demoIdle || reduceMotion) return;
+  if (document.visibilityState !== 'visible' || !$('busy').hidden || foldAnim) return;
+  if (performance.now() - lastActivity > 90000) startDemo();
+}, 3000);
+$('btn-demo').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (demo.running) stopDemo(); else startDemo();
+});
+
 // ---------- 起動 ----------
 initControls();
 renderLibrary();
-if (!loadFromHash()) loadItem(findItem('tI'));
+if (location.hash === '#demo') {
+  loadItem(findItem('tI'));
+  setTimeout(startDemo, 800);
+} else if (!loadFromHash()) loadItem(findItem('tI'));
 window.addEventListener('resize', debounce(() => renderNet(), 200));
