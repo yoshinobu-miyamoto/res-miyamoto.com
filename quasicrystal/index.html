@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QUASICRYSTAL — 三次元準結晶ビューア | RES Miyamoto</title>
+
+  <!-- SEO / OGP -->
+  <meta name="description" content="2種類の黄金菱面体が織りなす三次元準結晶の構造を、回転・分解・断面表示で観察するアプリです。高次元格子に基づく生成と、位相の変化に伴うブロック配置の変化を体験できます。">
+  <meta property="og:title" content="QUASICRYSTAL — 三次元準結晶ビューア">
+  <meta property="og:description" content="2種類の黄金菱面体が織りなす三次元準結晶を、回転・分解・断面表示で観察する。">
+  <meta property="og:image" content="https://res-miyamoto.com/quasicrystal/quasicrystal-thumb.webp">
+  <meta property="og:url" content="https://res-miyamoto.com/quasicrystal/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ja_JP">
+
+  <!-- Favicon -->
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@300;400&display=swap" rel="stylesheet">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="page.css">
+</head>
+<body>
+
+  <!-- ===== NAV ===== -->
+  <nav class="qc-nav" aria-label="サイト内リンク">
+    <a href="../">&larr; <span class="qc-nav-brand">RES Miyamoto</span></a>
+  </nav>
+
+  <!-- ===== INTRO ===== -->
+  <header class="studio qc-intro fade-in">
+    <div class="studio-link qc-card">
+      <span class="studio-figure">
+        <img
+          src="quasicrystal-thumb.webp"
+          alt="QUASICRYSTAL の表示例 — 2種類の菱面体ブロックによる三次元準結晶"
+          width="900"
+          height="900"
+        >
+      </span>
+      <span class="studio-body">
+        <span class="studio-eyebrow">Viewer</span>
+        <h1 class="studio-title">QUASICRYSTAL</h1>
+        <span class="studio-jp">三次元準結晶ビューア</span>
+        <p class="studio-desc qc-lead">
+          2種類の黄金菱面体が織りなす三次元準結晶の構造を、回転・分解・断面表示で観察するアプリです。高次元格子に基づく生成と、位相の変化に伴うブロック配置の変化を体験できます。
+        </p>
+        <p class="studio-desc-en">
+          <span class="nb">A 3D quasicrystal of two golden rhombohedra —</span>
+          <span class="nb">rotate, explode and slice it,</span>
+          <span class="nb">and watch the blocks rearrange as the phase shifts.</span>
+        </p>
+        <a class="studio-cta qc-open" href="app/">アプリを開く <span aria-hidden="true">&rarr;</span></a>
+      </span>
+    </div>
+  </header>
+
+  <!-- ===== DOCUMENTS ===== -->
+  <section class="qc-section fade-in delay-1" aria-labelledby="qc-docs-title">
+    <h2 class="qc-heading" id="qc-docs-title">資料 <span class="qc-heading-en">Documents</span></h2>
+    <ul class="qc-docs">
+      <li>
+        <a class="qc-doc" href="docs/quasicrystal-manual-2026-02-24.pdf" target="_blank" rel="noopener">
+          <span class="qc-doc-kind">使い方を読む</span>
+          <span class="qc-doc-title">QUASICRYSTAL 取扱説明書</span>
+          <span class="qc-doc-meta">PDF・2ページ・0.8 MB <span class="qc-doc-en">User guide</span></span>
+        </a>
+      </li>
+      <li>
+        <a class="qc-doc" href="docs/quasicrystal-technical-2026-02-24.pdf" target="_blank" rel="noopener">
+          <span class="qc-doc-kind">仕組みを読む</span>
+          <span class="qc-doc-title">QUASICRYSTAL 技術文書</span>
+          <span class="qc-doc-meta">PDF・5ページ・2.0 MB <span class="qc-doc-en">Theory &amp; implementation</span></span>
+        </a>
+      </li>
+    </ul>
+    <p class="qc-note">いずれも2026年2月24日時点の資料です。現在の版では、デモモードはタイトル文字をもう一度タップすると終了します。</p>
+  </section>
+
+  <!-- ===== FEATURES ===== -->
+  <section class="qc-section fade-in delay-2" aria-labelledby="qc-features-title">
+    <h2 class="qc-heading" id="qc-features-title">できること <span class="qc-heading-en">Features</span></h2>
+    <dl class="qc-features">
+      <div>
+        <dt>見る <span>View</span></dt>
+        <dd>ドラッグで回転（自動回転は一時停止）、タップで自動回転を再開、ピンチやホイールでズーム。ダブルタップでブロックが放射状に広がります。</dd>
+      </div>
+      <div>
+        <dt>分ける <span>Explode · Slice · Split</span></dt>
+        <dd>右下の歯車からパネルを開き、分解・断面・種類別の分離表示を切り替え、スライダーで量を調整します。</dd>
+      </div>
+      <div>
+        <dt>彩る <span>Palette · Glass · Type</span></dt>
+        <dd>5種類の配色（選択中をもう一度タップで色を入れ替え）、不透明／ガラス表示と透明度、表示するブロックの種類を選べます。</dd>
+      </div>
+      <div>
+        <dt>生成する <span>Radius · 6D Phase Shift</span></dt>
+        <dd>生成範囲（Radius）を変えて再計算。6D Phase Shift で切断面をずらすとブロック配置が入れ替わり、Auto で連続的に変化します。</dd>
+      </div>
+      <div>
+        <dt>眺める <span>Demo</span></dt>
+        <dd>左上の「QUASICRYSTAL」をタップすると、分解・断面・配色の変化を巡るデモモードになります。</dd>
+      </div>
+    </dl>
+    <p class="qc-note">PC・タブレット・スマートフォンのブラウザで動作します（WebGL を使用）。Radius を大きくすると計算に時間がかかります。</p>
+  </section>
+
+  <!-- ===== CREDIT ===== -->
+  <section class="qc-section qc-credit fade-in delay-3">
+    <p>制作：宮本（2026年2月、生成AIを併用して制作）</p>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="../" class="footer-email">&larr; res-miyamoto.com</a>
+      <a href="../polyhedra/" class="footer-email">Polyhedra Studio</a>
+    </div>
+    <p class="copyright">&copy; 2026 Miyamoto</p>
+  </footer>
+
+</body>
+</html>

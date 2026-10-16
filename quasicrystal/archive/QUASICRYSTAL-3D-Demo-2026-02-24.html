@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QUASICRYSTAL - Aperiodic Tiling in 3D (Elegant Demo)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/"
+            }
+        }
+    </script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #080c16; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+        * { user-select: none; -webkit-tap-highlight-color: transparent; }
+        
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            margin-top: -5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
+        }
+        input[type=range]:focus { outline: none; }
+
+        .segment-container {
+            display: flex;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            padding: 3px;
+        }
+        .segment-btn {
+            flex: 1;
+            text-align: center;
+            padding: 6px 0;
+            font-size: 10px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.5);
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .segment-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .palette-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .palette-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 50%; bottom: 0;
+            background-color: var(--color-left);
+            transition: background-color 0.4s ease;
+        }
+        .palette-btn::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 50%; right: 0; bottom: 0;
+            background-color: var(--color-right);
+            transition: background-color 0.4s ease;
+        }
+        .palette-btn.active {
+            border-color: #ffffff;
+            transform: scale(1.15);
+            box-shadow: 0 0 12px rgba(255,255,255,0.4);
+        }
+        .palette-btn.swap-anim {
+            transform: scale(1.15) rotate(180deg);
+        }
+
+        .panel-enter {
+            opacity: 1 !important;
+            transform: translateY(0) scale(1) !important;
+            pointer-events: auto !important;
+        }
+        
+        .tracking-widest-xl { letter-spacing: 0.25em; }
+
+        /* --- デモ用フェードスタイル --- */
+        .ui-fade {
+            transition: opacity 1.5s ease-in-out;
+        }
+        .demo-hidden {
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+    </style>
+</head>
+<body class="text-slate-200">
+
+    <!-- 3D Canvas -->
+    <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+    <!-- デモ用クロスフェード（暗転）レイヤー -->
+    <!-- 背景と同じ色(#080c16)で、2秒かけて滑らかにフェードアウト/インする -->
+    <div id="fade-overlay" class="absolute inset-0 bg-[#080c16] pointer-events-none opacity-0 transition-opacity duration-[2000ms] z-10"></div>
+
+    <!-- タイトルエリア（クリッカブル化し、タップでデモ切替） -->
+    <!-- z-index を高くして暗転中もタイトルだけは浮かび上がるように設定 -->
+    <div id="titleContainer" class="absolute top-6 left-6 md:top-8 md:left-8 z-30 cursor-pointer" style="pointer-events: auto;">
+        <h1 id="appTitle" class="text-xl md:text-2xl font-light tracking-widest-xl text-white/90 drop-shadow-lg mix-blend-screen transition-colors duration-1000">QUASICRYSTAL</h1>
+        <p id="appSubtitle" class="text-[9px] md:text-[10px] tracking-[0.3em] text-white/50 uppercase mt-2 transition-opacity duration-1000">Aperiodic Tiling in 3D Space</p>
+        <p id="demoIndicator" class="text-[9px] tracking-[0.2em] text-emerald-400 mt-2 opacity-0 transition-opacity duration-1000 absolute top-8 left-0 w-max">DEMO MODE - TAP TO RESTORE</p>
+    </div>
+
+    <!-- 各種UI (ui-fade クラスを付与してデモ中は非表示に) -->
+    <div class="absolute bottom-6 left-6 md:bottom-8 md:left-8 z-20 pointer-events-none flex flex-col gap-1.5 ui-fade">
+        <div class="text-[9px] text-white/40 tracking-widest leading-relaxed">
+            DRAG TO PAUSE <br class="md:hidden">/ TAP TO RESUME <br class="md:hidden">/ DBL-TAP TO EXPLODE
+        </div>
+        <div class="flex items-baseline gap-4 mt-1">
+            <div class="flex items-baseline gap-2">
+                <span class="text-[10px] text-white/40 uppercase tracking-widest">Blocks</span>
+                <span id="blockCount" class="text-xs font-mono text-white/80 tracking-widest">---</span>
+            </div>
+            <div class="flex items-baseline gap-2">
+                <span class="text-[10px] text-white/40 uppercase tracking-widest">Rotate</span>
+                <span id="rotateStatus" class="text-xs font-mono text-white/80 tracking-widest transition-colors duration-300">ON</span>
+            </div>
+        </div>
+    </div>
+
+    <button id="toggleBtn" class="absolute bottom-6 right-6 md:bottom-8 md:right-8 z-40 w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex justify-center items-center text-white/80 hover:text-white hover:bg-white/20 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)] cursor-pointer focus:outline-none overflow-hidden ui-fade">
+        <svg id="icon-gear" class="w-5 h-5 absolute transition-all duration-300 transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        <svg id="icon-close" class="w-5 h-5 absolute transition-all duration-300 transform scale-50 opacity-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+    </button>
+
+    <div id="controlPanel" class="absolute bottom-24 right-6 md:bottom-24 md:right-8 z-30 w-[calc(100%-3rem)] sm:w-80 bg-[#080c16]/60 backdrop-blur-2xl border border-white/10 rounded-2xl p-5 shadow-[0_10px_40px_rgba(0,0,0,0.5)] transition-all duration-400 transform translate-y-4 scale-95 opacity-0 pointer-events-none flex flex-col gap-5 ui-fade">
+        <div>
+            <div class="flex justify-between items-end mb-2.5">
+                <span class="text-[9px] text-white/50 tracking-widest uppercase">Color Palette <span class="opacity-50">(Tap active to swap)</span></span>
+            </div>
+            <div class="flex gap-3 items-center justify-between px-1" id="paletteContainer"></div>
+        </div>
+        <div class="border-t border-white/5 pt-4">
+            <div class="flex justify-between items-end mb-2">
+                <span class="text-[9px] text-white/50 tracking-widest uppercase">Material Texture</span>
+            </div>
+            <div class="segment-container">
+                <div class="segment-btn mat-btn active" data-mat="solid">Solid</div>
+                <div class="segment-btn mat-btn" data-mat="glass">Glass</div>
+            </div>
+            <div id="opacityContainer" class="mt-3 hidden transition-all opacity-0">
+                <div class="flex justify-between items-end mb-1.5">
+                    <span class="text-[8px] text-blue-300/80 tracking-widest uppercase">Glass Opacity</span>
+                    <span id="opacityVal" class="text-[9px] text-blue-300/80 font-mono tracking-wider">0.80</span>
+                </div>
+                <input type="range" id="opacitySlider" min="10" max="100" value="80">
+            </div>
+        </div>
+        <div class="border-t border-white/5 pt-4">
+            <div class="flex justify-between items-end mb-2">
+                <span class="text-[9px] text-white/50 tracking-widest uppercase">Display Mode</span>
+                <span id="paramValueDisplay" class="text-[9px] text-blue-300/80 font-mono tracking-wider hidden">VAL: 0.50</span>
+            </div>
+            <div class="segment-container">
+                <div class="segment-btn mode-btn active" data-mode="solid">Solid</div>
+                <div class="segment-btn mode-btn" data-mode="exploded">Explode</div>
+                <div class="segment-btn mode-btn" data-mode="layered">Slice</div>
+                <div class="segment-btn mode-btn" data-mode="split">Split</div>
+            </div>
+            <div id="paramContainer" class="mt-3 hidden transition-all">
+                <input type="range" id="paramSlider" min="0" max="100" value="50">
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4 border-t border-white/5 pt-4">
+            <div>
+                <span class="text-[9px] text-white/50 tracking-widest uppercase mb-2 block">Block Type</span>
+                <select id="filterSelect" class="w-full bg-black/40 text-[10px] text-white/80 border border-white/10 rounded-lg p-2 outline-none appearance-none tracking-wider">
+                    <option value="all">All Blocks</option>
+                    <option value="thick">Color L Only</option>
+                    <option value="thin">Color R Only</option>
+                </select>
+            </div>
+            <div>
+                <div class="flex justify-between items-end mb-2">
+                    <span class="text-[9px] text-white/50 tracking-widest uppercase">Radius</span>
+                    <span id="rangeVal" class="text-[10px] text-white/80 font-mono">4</span>
+                </div>
+                <input type="range" id="rangeSlider" min="2" max="6" step="1" value="4" class="mt-1">
+            </div>
+        </div>
+        <div class="border-t border-white/5 pt-4">
+            <div class="flex justify-between items-end mb-2">
+                <span class="text-[9px] text-white/50 tracking-widest uppercase">6D Phase Shift</span>
+                <button id="autoPhaseBtn" class="text-[9px] text-white/50 border border-white/20 rounded px-2 py-0.5 hover:bg-white/20 transition-colors uppercase tracking-widest outline-none">Auto</button>
+            </div>
+            <input type="range" id="phaseSlider" min="0" max="10" step="0.01" value="0">
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        const PALETTES = [
+            { name: 'Sapphire & Gold', thick: 0x7aa2d9, thin: 0xdfce81 },
+            { name: 'Ruby & Emerald',  thick: 0xd9777f, thin: 0x77d9ad },
+            { name: 'Amethyst & Quartz',thick: 0x9877d9, thin: 0xe8cce2 },
+            { name: 'Obsidian & Pearl', thick: 0x3b4252, thin: 0xe2e8f0 },
+            { name: 'Coral & Teal',    thick: 0xd99577, thin: 0x77bbd9 }
+        ];
+
+        let state = { 
+            material: 'solid', 
+            opacity: 0.8,
+            mode: 'solid', 
+            filter: 'all', 
+            paramValue: 0.5, 
+            phase: 0.0, 
+            N: 4,
+            paletteIndex: 0,
+            swapColors: false,         
+            globalExplode: false,      
+            explodeTarget: 0.0,        
+            explodeProgress: 0.0,
+            autoPhase: false           
+        };
+
+        const toggleBtn = document.getElementById('toggleBtn');
+        const controlPanel = document.getElementById('controlPanel');
+        const iconGear = document.getElementById('icon-gear');
+        const iconClose = document.getElementById('icon-close');
+        
+        const matBtns = document.querySelectorAll('.mat-btn');
+        const modeBtns = document.querySelectorAll('.mode-btn');
+        const opacityContainer = document.getElementById('opacityContainer');
+        const opacitySlider = document.getElementById('opacitySlider');
+        const opacityVal = document.getElementById('opacityVal');
+        
+        const filterSelect = document.getElementById('filterSelect');
+        const paramSlider = document.getElementById('paramSlider');
+        const paramContainer = document.getElementById('paramContainer');
+        const paramValueDisplay = document.getElementById('paramValueDisplay');
+        const phaseSlider = document.getElementById('phaseSlider');
+        const autoPhaseBtn = document.getElementById('autoPhaseBtn');
+        const rangeSlider = document.getElementById('rangeSlider');
+        const rangeVal = document.getElementById('rangeVal');
+        const blockCount = document.getElementById('blockCount');
+        const rotateStatus = document.getElementById('rotateStatus');
+        const paletteContainer = document.getElementById('paletteContainer');
+
+        PALETTES.forEach((pal, idx) => {
+            const btn = document.createElement('div');
+            btn.className = `palette-btn ${idx === 0 ? 'active' : ''}`;
+            btn.dataset.idx = idx;
+            const c1 = '#' + pal.thick.toString(16).padStart(6, '0');
+            const c2 = '#' + pal.thin.toString(16).padStart(6, '0');
+            btn.style.setProperty('--color-left', c1);
+            btn.style.setProperty('--color-right', c2);
+            btn.title = pal.name;
+            
+            btn.addEventListener('click', () => {
+                if(isDemoMode) return;
+                if (state.paletteIndex === idx && btn.classList.contains('active')) {
+                    state.swapColors = !state.swapColors;
+                    if (state.swapColors) {
+                        btn.style.setProperty('--color-left', c2);
+                        btn.style.setProperty('--color-right', c1);
+                        btn.classList.add('swap-anim');
+                    } else {
+                        btn.style.setProperty('--color-left', c1);
+                        btn.style.setProperty('--color-right', c2);
+                        btn.classList.remove('swap-anim');
+                    }
+                } else {
+                    document.querySelectorAll('.palette-btn').forEach(b => {
+                        b.classList.remove('active', 'swap-anim');
+                        const p = PALETTES[parseInt(b.dataset.idx)];
+                        b.style.setProperty('--color-left', '#' + p.thick.toString(16).padStart(6, '0'));
+                        b.style.setProperty('--color-right', '#' + p.thin.toString(16).padStart(6, '0'));
+                    });
+                    btn.classList.add('active');
+                    state.paletteIndex = idx;
+                    state.swapColors = false;
+                }
+                generateTiling();
+            });
+            paletteContainer.appendChild(btn);
+        });
+
+        let isPanelOpen = false;
+        toggleBtn.addEventListener('click', () => {
+            if(isDemoMode) return;
+            isPanelOpen = !isPanelOpen;
+            if (isPanelOpen) {
+                controlPanel.classList.add('panel-enter');
+                iconGear.classList.add('rotate-90', 'scale-50', 'opacity-0');
+                iconClose.classList.remove('scale-50', 'opacity-0');
+                iconClose.classList.add('rotate-90');
+            } else {
+                controlPanel.classList.remove('panel-enter');
+                iconGear.classList.remove('rotate-90', 'scale-50', 'opacity-0');
+                iconClose.classList.add('scale-50', 'opacity-0');
+                iconClose.classList.remove('rotate-90');
+            }
+        });
+
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x080c16, 0.012);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(22, 16, 28);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.04;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.5;
+        controls.minDistance = 5;
+        controls.maxDistance = 60;
+        controls.target.set(0, 0, 0); 
+
+        let isDragging = false;
+        let pointerDownPos = { x: 0, y: 0 };
+        let lastTapTime = 0;
+
+        function updateRotateStatus(isOn) {
+            controls.autoRotate = isOn;
+            rotateStatus.textContent = isOn ? "ON" : "OFF";
+            if (isOn) {
+                rotateStatus.classList.remove('text-yellow-400/80');
+                rotateStatus.classList.add('text-white/80');
+            } else {
+                rotateStatus.classList.remove('text-white/80');
+                rotateStatus.classList.add('text-yellow-400/80');
+            }
+        }
+
+        renderer.domElement.addEventListener('pointerdown', (e) => {
+            pointerDownPos.x = e.clientX;
+            pointerDownPos.y = e.clientY;
+            isDragging = false;
+        });
+        
+        renderer.domElement.addEventListener('pointermove', (e) => {
+            if (Math.abs(e.clientX - pointerDownPos.x) > 5 || Math.abs(e.clientY - pointerDownPos.y) > 5) {
+                isDragging = true;
+            }
+        });
+        
+        renderer.domElement.addEventListener('pointerup', (e) => {
+            if (!isDragging) {
+                const now = Date.now();
+                if (now - lastTapTime < 350) {
+                    if(!isDemoMode){ 
+                        state.globalExplode = !state.globalExplode;
+                        state.explodeTarget = state.globalExplode ? 1.0 : 0.0;
+                    }
+                    lastTapTime = 0; 
+                } else {
+                    lastTapTime = now;
+                    updateRotateStatus(true);
+                }
+            } else {
+                updateRotateStatus(false);
+            }
+        });
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        
+        const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight1.position.set(15, 25, 10);
+        scene.add(dirLight1);
+        
+        const dirLight2 = new THREE.DirectionalLight(0xa5b4fc, 0.8); 
+        dirLight2.position.set(-15, -15, -10);
+        scene.add(dirLight2);
+
+        const dirLight3 = new THREE.DirectionalLight(0xffe4b5, 0.5); 
+        dirLight3.position.set(0, -10, -20);
+        scene.add(dirLight3);
+
+        const tau = (1 + Math.sqrt(5)) / 2;
+        const vRaw = [
+            new THREE.Vector3(1, tau, 0), new THREE.Vector3(-1, tau, 0),
+            new THREE.Vector3(0, 1, tau), new THREE.Vector3(0, -1, tau),
+            new THREE.Vector3(tau, 0, 1), new THREE.Vector3(tau, 0, -1)
+        ];
+        const v = vRaw.map(vec => vec.normalize());
+
+        function det3(v0, v1, v2) {
+            return v0.x * (v1.y * v2.z - v1.z * v2.y) - v0.y * (v1.x * v2.z - v1.z * v2.x) + v0.z * (v1.x * v2.y - v1.y * v2.x);
+        }
+
+        function solve3x3(v0, v1, v2, b) {
+            const D = det3(v0, v1, v2);
+            if (Math.abs(D) < 1e-6) return null;
+            const x = (b[0] * (v1.y * v2.z - v1.z * v2.y) - b[1] * (v0.y * v2.z - v0.z * v2.y) + b[2] * (v0.y * v1.z - v0.z * v1.y)) / D;
+            const y = (-b[0] * (v1.x * v2.z - v1.z * v2.x) + b[1] * (v0.x * v2.z - v0.z * v2.x) - b[2] * (v0.x * v1.z - v0.z * v1.x)) / D;
+            const z = (b[0] * (v1.x * v2.y - v1.y * v2.x) - b[1] * (v0.x * v2.y - v0.y * v2.x) + b[2] * (v0.x * v1.y - v0.y * v1.x)) / D;
+            return new THREE.Vector3(x, y, z);
+        }
+
+        function createHexahedronGeometry(eA, eB, eC, isLeftHanded) {
+            const geom = new THREE.BufferGeometry();
+            const V = new THREE.Vector3(0,0,0);
+            const pts = [
+                V, eA, eB, eC,
+                V.clone().add(eA).add(eB), V.clone().add(eB).add(eC), V.clone().add(eC).add(eA),
+                V.clone().add(eA).add(eB).add(eC)
+            ];
+            const indices = [
+                [0, 2, 4, 1], [0, 3, 5, 2], [0, 1, 6, 3],
+                [3, 6, 7, 5], [1, 4, 7, 6], [2, 5, 7, 4] 
+            ];
+            
+            const vertices = [];
+            const normals = [];
+
+            const ab = new THREE.Vector3();
+            const cb = new THREE.Vector3();
+            const faceNormal = new THREE.Vector3();
+
+            indices.forEach(face => {
+                const p0 = pts[face[0]], p1 = pts[face[1]], p2 = pts[face[2]], p3 = pts[face[3]];
+                
+                ab.subVectors(p1, p0);
+                cb.subVectors(p3, p0);
+                faceNormal.crossVectors(ab, cb).normalize();
+                
+                if (isLeftHanded) {
+                    faceNormal.negate();
+                    vertices.push(p0.x, p0.y, p0.z, p2.x, p2.y, p2.z, p1.x, p1.y, p1.z);
+                    normals.push(faceNormal.x, faceNormal.y, faceNormal.z, faceNormal.x, faceNormal.y, faceNormal.z, faceNormal.x, faceNormal.y, faceNormal.z);
+                    
+                    vertices.push(p0.x, p0.y, p0.z, p3.x, p3.y, p3.z, p2.x, p2.y, p2.z);
+                    normals.push(faceNormal.x, faceNormal.y, faceNormal.z, faceNormal.x, faceNormal.y, faceNormal.z, faceNormal.x, faceNormal.y, faceNormal.z);
+                } else {
+                    vertices.push(p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, p2.x, p2.y, p2.z);
+                    normals.push(faceNormal.x, faceNormal.y, faceNormal.z, faceNormal.x, faceNormal.y, faceNormal.z, faceNormal.x, faceNormal.y, faceNormal.z);
+                    
+                    vertices.push(p0.x, p0.y, p0.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z);
+                    normals.push(faceNormal.x, faceNormal.y, faceNormal.z, faceNormal.x, faceNormal.y, faceNormal.z, faceNormal.x, faceNormal.y, faceNormal.z);
+                }
+            });
+            
+            geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices), 3));
+            geom.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), 3));
+            return geom;
+        }
+
+        function hash6D(K) {
+            let h = 0;
+            for (let i = 0; i < 6; i++) h = Math.imul(31, h) + K[i] | 0;
+            return (h >>> 0) / 4294967296; 
+        }
+
+        let instancedMeshes = [];
+        let allBlocks = []; 
+        let thickMat, thinMat; 
+
+        function generateTiling() {
+            instancedMeshes.forEach(mesh => { scene.remove(mesh); mesh.geometry.dispose(); mesh.material.dispose(); });
+            instancedMeshes = [];
+            allBlocks = [];
+
+            const N = state.N;
+            const phase = state.phase;
+            const gamma = [];
+            for (let i = 0; i < 6; i++) {
+                gamma[i] = 0.1001 + (i * Math.SQRT2) % 1.0 + (phase * (i+1) * 0.1);
+            }
+
+            const theoreticalDrift = new THREE.Vector3();
+            for (let i = 0; i < 6; i++) theoreticalDrift.addScaledVector(v[i], gamma[i]);
+
+            const R_gen = N;
+            const comboMap = new Map();
+
+            for(let i=0; i<4; i++){
+                for(let j=i+1; j<5; j++){
+                    for(let k=j+1; k<6; k++){
+                        const vol = det3(v[i], v[j], v[k]);
+                        if (Math.abs(vol) < 0.1) continue; 
+                        
+                        const isLeftHanded = vol < 0;
+                        const isThick = Math.abs(vol) > 0.6;
+                        
+                        const len0 = v[j].clone().cross(v[k]).length() / Math.abs(vol);
+                        const len1 = v[k].clone().cross(v[i]).length() / Math.abs(vol);
+                        const len2 = v[i].clone().cross(v[j]).length() / Math.abs(vol);
+                        
+                        const maxNi = Math.ceil(len0 * R_gen) + 1;
+                        const maxNj = Math.ceil(len1 * R_gen) + 1;
+                        const maxNk = Math.ceil(len2 * R_gen) + 1;
+
+                        const comboKey = `${i},${j},${k},${isLeftHanded}`;
+
+                        for(let ni=-maxNi; ni<=maxNi; ni++){
+                            for(let nj=-maxNj; nj<=maxNj; nj++){
+                                for(let nk=-maxNk; nk<=maxNk; nk++){
+                                    const b = [ni + gamma[i], nj + gamma[j], nk + gamma[k]];
+                                    const pt = solve3x3(v[i], v[j], v[k], b);
+                                    if(!pt) continue;
+                                    if (pt.length() > R_gen * 1.5) continue; 
+
+                                    const K = [];
+                                    for(let m=0; m<6; m++){
+                                        if (m===i) K[m] = ni;
+                                        else if (m===j) K[m] = nj;
+                                        else if (m===k) K[m] = nk;
+                                        else K[m] = Math.ceil(pt.dot(v[m]) - gamma[m] + 1e-5);
+                                    }
+
+                                    const P = new THREE.Vector3();
+                                    for(let m=0; m<6; m++){
+                                        P.addScaledVector(v[m], K[m]);
+                                    }
+                                    P.add(theoreticalDrift);
+
+                                    const center = P.clone().add(v[i]).add(v[j]).add(v[k]).multiplyScalar(0.5);
+                                    
+                                    if (center.length() > R_gen * 0.95) continue;
+                                    
+                                    if (!comboMap.has(comboKey)) {
+                                        comboMap.set(comboKey, { i, j, k, isThick, isLeftHanded, blocks: [] });
+                                    }
+                                    
+                                    comboMap.get(comboKey).blocks.push({ position: P, center: center, colorRand: hash6D(K) });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            const isGlass = state.material === 'glass';
+            const currentPalette = PALETTES[state.paletteIndex];
+            
+            const cThick = state.swapColors ? currentPalette.thin : currentPalette.thick;
+            const cThin = state.swapColors ? currentPalette.thick : currentPalette.thin;
+
+            const thickMatProps = { color: cThick, flatShading: true };
+            const thinMatProps = { color: cThin, flatShading: true };
+
+            if (isGlass) {
+                thickMatProps.transparent = true;
+                thickMatProps.opacity = state.opacity;
+                thickMatProps.depthWrite = true; 
+                thickMatProps.roughness = 0.05;
+                thickMatProps.metalness = 0.3;
+                thickMatProps.clearcoat = 1.0;
+                thickMatProps.clearcoatRoughness = 0.05;
+                
+                thinMatProps.transparent = true;
+                thinMatProps.opacity = state.opacity;
+                thinMatProps.depthWrite = true;
+                thinMatProps.roughness = 0.05;
+                thinMatProps.metalness = 0.3;
+                thinMatProps.clearcoat = 1.0;
+                thinMatProps.clearcoatRoughness = 0.05;
+
+                thickMat = new THREE.MeshPhysicalMaterial(thickMatProps);
+                thinMat = new THREE.MeshPhysicalMaterial(thinMatProps);
+            } else {
+                thickMatProps.roughness = 0.35;
+                thickMatProps.metalness = 0.1;
+                thinMatProps.roughness = 0.35;
+                thinMatProps.metalness = 0.1;
+
+                thickMat = new THREE.MeshStandardMaterial(thickMatProps);
+                thinMat = new THREE.MeshStandardMaterial(thinMatProps);
+            }
+
+            let totalCount = 0;
+            const dummy = new THREE.Object3D();
+            const color = new THREE.Color();
+            const baseThickColor = new THREE.Color(cThick);
+            const baseThinColor = new THREE.Color(cThin);
+
+            comboMap.forEach(combo => {
+                const geom = createHexahedronGeometry(v[combo.i], v[combo.j], v[combo.k], combo.isLeftHanded);
+                const mat = combo.isThick ? thickMat : thinMat;
+                const iMesh = new THREE.InstancedMesh(geom, mat, combo.blocks.length);
+                const baseColor = combo.isThick ? baseThickColor : baseThinColor;
+
+                combo.blocks.forEach((block, index) => {
+                    dummy.position.copy(block.position);
+                    dummy.updateMatrix();
+                    iMesh.setMatrixAt(index, dummy.matrix);
+
+                    const hsl = {h:0, s:0, l:0};
+                    baseColor.getHSL(hsl);
+                    color.setHSL(hsl.h, hsl.s * 0.9, hsl.l + (block.colorRand - 0.5) * 0.06);
+                    iMesh.setColorAt(index, color);
+
+                    allBlocks.push({
+                        meshId: instancedMeshes.length,
+                        instanceId: index,
+                        center: block.center,
+                        position: block.position,
+                        type: combo.isThick ? 'thick' : 'thin'
+                    });
+                });
+
+                scene.add(iMesh);
+                instancedMeshes.push(iMesh);
+                totalCount += combo.blocks.length;
+            });
+
+            controls.update();
+            blockCount.textContent = totalCount.toLocaleString();
+            updateDisplay();
+        }
+
+        const dummyMatrix = new THREE.Object3D();
+        const zeroMatrix = new THREE.Matrix4().makeScale(0,0,0);
+
+        function updateDisplay() {
+            const needsUpdateMap = new Array(instancedMeshes.length).fill(false);
+            const maxR = state.N * 0.95; 
+            const isGlass = state.material === 'glass';
+
+            allBlocks.forEach(block => {
+                let visible = true;
+                let scale = 1.0;
+                let targetPos = block.position.clone();
+
+                if (state.filter === 'thick' && block.type === 'thin') visible = false;
+                if (state.filter === 'thin' && block.type === 'thick') visible = false;
+
+                if (visible) {
+                    const py = block.center.y;
+                    const r = block.center.length();
+
+                    switch (state.mode) {
+                        case 'solid': break;
+                        case 'exploded':
+                            const modeExplodeMag = state.paramValue * 2.5; 
+                            if (r > 0) {
+                                const dir = block.center.clone().normalize();
+                                targetPos.add(dir.multiplyScalar(modeExplodeMag * r));
+                            }
+                            break;
+                        case 'layered':
+                            const sliceY = (state.paramValue - 0.5) * maxR * 2.5;
+                            if (Math.abs(py - sliceY) > 1.2) { visible = false; scale = 0; }
+                            break;
+                        case 'split':
+                            const splitDist = state.paramValue * maxR * 2.5;
+                            if (block.type === 'thick') targetPos.x -= splitDist;
+                            else targetPos.x += splitDist;
+                            break;
+                    }
+
+                    if (state.explodeProgress > 0.001) {
+                        const globalExplodeMag = state.explodeProgress * 2.5;
+                        if (r > 0) {
+                            const dir = block.center.clone().normalize();
+                            targetPos.add(dir.multiplyScalar(globalExplodeMag * r));
+                        }
+                    }
+                }
+
+                const mesh = instancedMeshes[block.meshId];
+                if (visible) {
+                    const blockScale = isGlass ? scale * 0.98 : scale * 0.995;
+                    dummyMatrix.position.copy(targetPos);
+                    dummyMatrix.scale.set(blockScale, blockScale, blockScale);
+                    dummyMatrix.updateMatrix();
+                    mesh.setMatrixAt(block.instanceId, dummyMatrix.matrix);
+                } else {
+                    mesh.setMatrixAt(block.instanceId, zeroMatrix);
+                }
+                needsUpdateMap[block.meshId] = true;
+            });
+
+            instancedMeshes.forEach((mesh, idx) => {
+                if (needsUpdateMap[idx]) mesh.instanceMatrix.needsUpdate = true;
+            });
+        }
+
+
+        // ==========================================
+        // 🌟 デモ機能（暗転クロスフェード版）の実装
+        // ==========================================
+        let isDemoMode = false;
+        let demoStartTime = 0;
+        let preDemoState = null;
+        let demoPhase = -1; // -1:None, 0:Explode, 1:Layered, 2:Solid
+        let demoTargetParam = 0;
+
+        const titleContainer = document.getElementById('titleContainer');
+        const appTitle = document.getElementById('appTitle');
+        const appSubtitle = document.getElementById('appSubtitle');
+        const demoIndicator = document.getElementById('demoIndicator');
+        const uiFades = document.querySelectorAll('.ui-fade');
+        const fadeOverlay = document.getElementById('fade-overlay');
+
+        function startDemo() {
+            if (isDemoMode) return;
+            isDemoMode = true;
+            demoStartTime = performance.now();
+            demoPhase = -1;
+
+            // 復元用の状態保存
+            preDemoState = {
+                mode: state.mode,
+                material: state.material,
+                paramValue: state.paramValue,
+                paletteIndex: state.paletteIndex,
+                autoPhase: state.autoPhase,
+                autoRotate: controls.autoRotate
+            };
+
+            if (isPanelOpen) toggleBtn.click();
+            uiFades.forEach(el => el.classList.add('demo-hidden'));
+            
+            appTitle.classList.add('text-emerald-300');
+            appSubtitle.classList.add('opacity-0');
+            demoIndicator.classList.remove('opacity-0');
+            fadeOverlay.classList.remove('opacity-100'); // 念のため暗転解除
+
+            // デモ強制設定
+            state.autoPhase = true;
+            updateRotateStatus(true);
+            state.globalExplode = false;
+            state.explodeTarget = 0;
+            
+            // 全てのデモは Solid のマテリアルで実行
+            if (state.material !== 'solid') {
+                state.material = 'solid';
+                generateTiling();
+            }
+        }
+
+        function stopDemo() {
+            if (!isDemoMode) return;
+            isDemoMode = false;
+
+            uiFades.forEach(el => el.classList.remove('demo-hidden'));
+            appTitle.classList.remove('text-emerald-300');
+            appSubtitle.classList.remove('opacity-0');
+            demoIndicator.classList.add('opacity-0');
+            fadeOverlay.classList.remove('opacity-100'); // 復帰時は暗転させない
+
+            // 状態の完全復元
+            state.mode = preDemoState.mode;
+            state.material = preDemoState.material;
+            state.paramValue = preDemoState.paramValue;
+            state.autoPhase = preDemoState.autoPhase;
+            updateRotateStatus(preDemoState.autoRotate);
+
+            if (state.paletteIndex !== preDemoState.paletteIndex) {
+                state.paletteIndex = preDemoState.paletteIndex;
+                generateTiling();
+            } else if (state.material !== 'solid') {
+                generateTiling();
+            }
+
+            updateDisplay();
+            syncUIWithState();
+        }
+
+        titleContainer.addEventListener('click', () => {
+            if (isDemoMode) stopDemo();
+            else startDemo();
+        });
+
+        // 状態復元時のUI一致処理
+        function syncUIWithState() {
+            paramSlider.value = state.paramValue * 100;
+            paramValueDisplay.textContent = `VAL: ${state.paramValue.toFixed(2)}`;
+            opacitySlider.value = state.opacity * 100;
+            opacityVal.textContent = state.opacity.toFixed(2);
+            
+            modeBtns.forEach(b => {
+                b.classList.remove('active');
+                if (b.dataset.mode === state.mode) b.classList.add('active');
+            });
+            matBtns.forEach(b => {
+                b.classList.remove('active');
+                if (b.dataset.mat === state.material) b.classList.add('active');
+            });
+            document.querySelectorAll('.palette-btn').forEach(b => {
+                b.classList.remove('active', 'swap-anim');
+                if (parseInt(b.dataset.idx) === state.paletteIndex) b.classList.add('active');
+            });
+            
+            if (state.autoPhase) {
+                autoPhaseBtn.classList.add('bg-white/20', 'text-white');
+                autoPhaseBtn.classList.remove('text-white/50');
+            } else {
+                autoPhaseBtn.classList.remove('bg-white/20', 'text-white');
+                autoPhaseBtn.classList.add('text-white/50');
+            }
+            
+            if (state.mode === 'solid') {
+                paramContainer.classList.add('hidden', 'opacity-0');
+                paramValueDisplay.classList.add('hidden');
+            } else {
+                paramContainer.classList.remove('hidden', 'opacity-0');
+                paramValueDisplay.classList.remove('hidden');
+            }
+            if (state.material === 'glass') opacityContainer.classList.remove('hidden', 'opacity-0');
+            else opacityContainer.classList.add('hidden', 'opacity-0');
+        }
+
+
+        // --- Event Listeners (手動操作用) ---
+        autoPhaseBtn.addEventListener('click', () => {
+            if(isDemoMode) return;
+            state.autoPhase = !state.autoPhase;
+            syncUIWithState();
+        });
+
+        matBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if(isDemoMode) return;
+                state.material = e.target.dataset.mat;
+                syncUIWithState();
+                generateTiling(); 
+            });
+        });
+
+        opacitySlider.addEventListener('input', (e) => {
+            if(isDemoMode) return;
+            state.opacity = parseFloat(e.target.value) / 100;
+            opacityVal.textContent = state.opacity.toFixed(2);
+            if (state.material === 'glass' && thickMat && thinMat) {
+                thickMat.opacity = state.opacity;
+                thinMat.opacity = state.opacity;
+            }
+        });
+
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if(isDemoMode) return;
+                state.mode = e.target.dataset.mode;
+                syncUIWithState();
+                updateDisplay();
+            });
+        });
+
+        filterSelect.addEventListener('change', (e) => { if(!isDemoMode){ state.filter = e.target.value; updateDisplay(); } });
+        
+        paramSlider.addEventListener('input', (e) => {
+            if(isDemoMode) return;
+            state.paramValue = parseFloat(e.target.value) / 100;
+            paramValueDisplay.textContent = `VAL: ${state.paramValue.toFixed(2)}`;
+            updateDisplay();
+        });
+
+        let generateTimeout;
+        rangeSlider.addEventListener('input', (e) => { if(!isDemoMode) rangeVal.textContent = e.target.value; });
+        rangeSlider.addEventListener('change', (e) => {
+            if(isDemoMode) return;
+            state.N = parseInt(e.target.value);
+            blockCount.textContent = "CALC...";
+            setTimeout(() => generateTiling(), 10);
+        });
+
+        phaseSlider.addEventListener('input', (e) => {
+            if(isDemoMode) return;
+            state.phase = parseFloat(e.target.value);
+            if(state.autoPhase) autoPhaseBtn.click();
+            clearTimeout(generateTimeout);
+            generateTimeout = setTimeout(() => generateTiling(), 40); 
+        });
+
+        let lastPhaseUpdateTime = 0;
+
+        // --- アニメーションループ ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            const now = performance.now();
+
+            // 🌟 デモシナリオ：暗転を挟んで静謐に遷移（24秒ループ）
+            if (isDemoMode) {
+                const elapsed = now - demoStartTime;
+                const duration = 24000;
+                const t = elapsed % duration;
+
+                // Phase 0: 展開 (Explode) [0s ~ 8s]
+                if (t < 8000) {
+                    if (demoPhase !== 0) {
+                        demoPhase = 0;
+                        state.mode = 'exploded'; // 暗闇の中で切り替え
+                        state.paramValue = 0;    // リセットしてカクつき防止
+                        demoTargetParam = 0;
+                        fadeOverlay.classList.remove('opacity-100'); // 視界が開ける
+                    }
+                    if (t < 6000) {
+                        // 6秒かけてゆっくり広がり、また閉じる
+                        demoTargetParam = Math.sin((t / 6000) * Math.PI) * 0.6;
+                    } else {
+                        demoTargetParam = 0;
+                        // 6秒経過したら、2秒かけてゆっくり暗転
+                        if (!fadeOverlay.classList.contains('opacity-100')) {
+                            fadeOverlay.classList.add('opacity-100');
+                        }
+                    }
+                } 
+                // Phase 1: スキャン (Layered) [8s ~ 16s]
+                else if (t < 16000) {
+                    if (demoPhase !== 1) {
+                        demoPhase = 1;
+                        state.mode = 'layered';
+                        state.paramValue = 0;
+                        demoTargetParam = 0;
+                        fadeOverlay.classList.remove('opacity-100'); 
+                    }
+                    if (t < 14000) {
+                        // スライス位置を0から1へ移動
+                        demoTargetParam = (t - 8000) / 6000;
+                    } else {
+                        if (!fadeOverlay.classList.contains('opacity-100')) {
+                            fadeOverlay.classList.add('opacity-100');
+                        }
+                    }
+                } 
+                // Phase 2: 色変化と余韻 (Solid) [16s ~ 24s]
+                else {
+                    if (demoPhase !== 2) {
+                        demoPhase = 2;
+                        state.paletteIndex = (state.paletteIndex + 1) % PALETTES.length;
+                        state.mode = 'solid';
+                        state.paramValue = 0;
+                        demoTargetParam = 0;
+                        generateTiling(); // 暗闇の中でモデルを再生成
+                        fadeOverlay.classList.remove('opacity-100'); 
+                    }
+                    // 22秒までそのままゆっくり回り、最後の2秒で暗転してループ
+                    if (t >= 22000 && !fadeOverlay.classList.contains('opacity-100')) {
+                        fadeOverlay.classList.add('opacity-100');
+                    }
+                }
+
+                // デモ中の値の滑らかな追従処理
+                if (Math.abs(demoTargetParam - state.paramValue) > 0.001) {
+                    state.paramValue += (demoTargetParam - state.paramValue) * 0.05;
+                    updateDisplay();
+                }
+            }
+
+            // 手動グローバル爆発の追従
+            if (!isDemoMode && Math.abs(state.explodeTarget - state.explodeProgress) > 0.001) {
+                state.explodeProgress += (state.explodeTarget - state.explodeProgress) * 0.08;
+                updateDisplay();
+            } else if (!isDemoMode && state.explodeProgress > 0 && state.explodeProgress < 1) {
+                state.explodeProgress = state.explodeTarget;
+                updateDisplay();
+            }
+
+            // 位相の自動反復(Auto Phase)
+            if (state.autoPhase) {
+                if (now - lastPhaseUpdateTime > 60) {
+                    state.phase += 0.015;
+                    if (state.phase > 10) state.phase = 0;
+                    if (!isDemoMode) phaseSlider.value = state.phase;
+                    generateTiling();
+                    lastPhaseUpdateTime = now;
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        generateTiling();
+        animate();
+
+    </script>
+</body>
+</html>
+
+
+
