@@ -175,6 +175,11 @@ body {
   padding: 2rem 1.5rem 1rem;
 }
 
+/* 紹介を続けて並べるときは間を詰める */
+.studio + .studio {
+  padding-top: 1rem;
+}
+
 .studio-link {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

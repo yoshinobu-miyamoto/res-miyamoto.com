@@ -1,0 +1,188 @@
+/* ===== QUASICRYSTAL 紹介ページ — page.css =====
+   トップページの style.css（色・字体・studio-* の紹介カード）を土台に、
+   このページだけで使う部品を足す。 */
+
+/* ---------- Nav ---------- */
+.qc-nav {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 0;
+}
+
+.qc-nav a {
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.qc-nav a:hover,
+.qc-nav a:focus-visible {
+  color: var(--gold);
+}
+
+/* ---------- Intro card（studio-link の見た目を流用、カード自体はリンクにしない） ---------- */
+.qc-intro {
+  padding-top: 1.5rem;
+}
+
+.qc-card:hover {
+  border-color: #2a2a2a;
+}
+
+.qc-card:hover .studio-figure img {
+  transform: none;
+  filter: brightness(0.92) contrast(1.04);
+}
+
+.qc-lead {
+  max-width: 26em;
+  text-align: left;
+}
+
+.qc-open {
+  text-decoration: none;
+}
+
+.qc-open:hover,
+.qc-open:focus-visible {
+  background: var(--gold);
+  color: var(--bg-deep);
+  outline: none;
+}
+
+.qc-open:hover span,
+.qc-open:focus-visible span {
+  transform: translateX(4px);
+}
+
+/* ---------- Sections ---------- */
+.qc-section {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 0;
+}
+
+.qc-heading {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  color: var(--text);
+  margin-bottom: 1.25rem;
+}
+
+.qc-heading-en {
+  margin-left: 0.8em;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+}
+
+.qc-note {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* ---------- Documents ---------- */
+.qc-docs {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.qc-doc {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  height: 100%;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid #2a2a2a;
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.3s ease;
+}
+
+.qc-doc:hover,
+.qc-doc:focus-visible {
+  border-color: var(--gold);
+  outline: none;
+}
+
+.qc-doc-kind {
+  font-size: 0.8rem;
+  letter-spacing: 0.25em;
+  color: var(--gold);
+}
+
+.qc-doc-title {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.05rem;
+}
+
+.qc-doc-meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.qc-doc-en {
+  margin-left: 0.6em;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.95rem;
+}
+
+/* ---------- Features ---------- */
+.qc-features {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem 2rem;
+}
+
+.qc-features dt {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1rem;
+  letter-spacing: 0.2em;
+  margin-bottom: 0.3rem;
+}
+
+.qc-features dt span {
+  margin-left: 0.6em;
+  font-family: var(--serif);
+  font-style: italic;
+  letter-spacing: 0.05em;
+  color: var(--gold);
+}
+
+.qc-features dd {
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: var(--muted);
+}
+
+/* ---------- Credit ---------- */
+.qc-credit {
+  padding-bottom: 4rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 600px) {
+  .qc-nav,
+  .qc-section {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .qc-docs,
+  .qc-features {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
