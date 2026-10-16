@@ -360,7 +360,8 @@ function build(fn, name, en, notation, hash) {
       $('poly-counts').textContent = `V ${state.an.V} · E ${state.an.E} · F ${state.an.F}`;
       if (notation) $('notation-input').value = notation;
       document.title = `${name} — Hyperfolder`;
-      if (hash && location.hash.slice(1) !== hash) history.replaceState(null, '', '#' + hash);
+      // デモ中は #demo のままにする（再読み込みしてもデモが続くように）
+      if (hash && location.hash.slice(1) !== hash && !keepDemoHash()) history.replaceState(null, '', '#' + hash);
       updateColors(false);
       computeNet(true);
       renderInfo();
@@ -743,7 +744,7 @@ function load4D(item, param) {
       $('poly-counts').textContent = `V ${T.V.length} · E ${T.edges.length} · F ${T.faces2.length} · C ${T.cells.length}`;
       document.title = `${name} — Hyperfolder`;
       const hash = item.param ? item.id + 'n' + param : item.id;
-      if (location.hash.slice(1) !== hash) history.replaceState(null, '', '#' + hash);
+      if (location.hash.slice(1) !== hash && !keepDemoHash()) history.replaceState(null, '', '#' + hash);
       // 手前に置く胞の選択肢
       const sel = $('front4');
       sel.innerHTML = '';
@@ -827,6 +828,8 @@ function renderInfo4() {
 }
 
 // ---------- デモ・モード（自己紹介） ----------
+// デモ中（と #demo で開いた直後の準備中）は URL を #demo のままにする
+const keepDemoHash = () => document.body.classList.contains('demo') || document.body.dataset.keepHash === '1';
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 let demoPrev = null;
 const waitReady = (item) => new Promise((resolve) => {
@@ -862,6 +865,7 @@ const demo = new Demo({
   },
   leave() {
     document.body.classList.remove('demo');
+    delete document.body.dataset.keepHash;
     $('btn-demo').querySelector('span').textContent = 'デモ';
     setFold(0);
     if (demoPrev) {
@@ -922,6 +926,7 @@ $('btn-demo').addEventListener('click', (e) => {
 initControls();
 renderLibrary();
 if (location.hash === '#demo') {
+  document.body.dataset.keepHash = '1';
   loadItem(findItem('tI'));
   setTimeout(startDemo, 800);
 } else if (!loadFromHash()) loadItem(findItem('tI'));
