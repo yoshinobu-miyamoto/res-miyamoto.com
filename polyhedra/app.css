@@ -84,6 +84,27 @@ button, input, select { font: inherit; color: inherit; }
 }
 .demo-btn svg { width: 11px; height: 11px; fill: currentColor; }
 .demo-btn:hover { background: var(--gold); color: #1a1710; }
+.lang-btn {
+  border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 999px; cursor: pointer;
+  padding: 3px 10px; font-size: 11.5px; letter-spacing: 0.08em; white-space: nowrap; transition: color .2s, border-color .2s;
+}
+.lang-btn .l-short { display: none; }
+@media (max-width: 480px) { .lang-btn .l-full { display: none; } .lang-btn .l-short { display: inline; } }
+/* 幅の狭いスマホ: デモは記号だけにして、版番号が名前に重ならないようにする */
+@media (max-width: 400px) {
+  .demo-btn > span { display: none; }
+  .demo-btn { padding: 5px 8px !important; }
+  .brand-name { font-size: 17px !important; }
+}
+.lang-btn:hover, .lang-btn:focus-visible { color: var(--gold); border-color: rgba(196, 162, 101, 0.6); }
+/* 英語表示: 見出しの英語の添え字は本文と重なるので隠し、日本語の添え字は立体の書体にしない */
+html[lang="en"] .block-title .en { display: none; }
+html[lang="en"] .poly-en, html[lang="en"] .lib-item .en, html[lang="en"] .lib-cat > summary .en,
+html[lang="en"] .demo-en { font-family: var(--sans); font-style: normal; letter-spacing: 0.04em; }
+html[lang="en"] .demo-intro-ja { display: none; }
+html[lang="en"] .title-block h1 { letter-spacing: 0.03em; }
+html[lang="en"] .row:has(select + select) { grid-template-columns: 76px minmax(0, 1fr) 100px; }
+html[lang="en"] details > summary.block-title::after { content: 'Open'; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--panel); }
 .seg button {
   border: 0; background: transparent; padding: 4px 14px; border-radius: 999px; cursor: pointer;
@@ -387,6 +408,9 @@ body.demo .gl canvas { cursor: default; }
   .brand-name { font-size: 18px; }
   .top-actions { gap: 6px; }
   .demo-btn { padding: 4px 9px 4px 8px; }
+  .lang-btn { padding: 3px 8px; }
+  .brand-wrap { gap: 6px; }
+  .ver-chip { padding: 1px 6px; font-size: 10.5px; }
   .seg button { padding: 4px 10px; }
   .stage, .stage[data-view="split"] { height: auto; min-height: 0; }
   .library, .inspector { display: none; }

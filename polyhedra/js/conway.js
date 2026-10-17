@@ -4,6 +4,7 @@ import {
   add, sub, mul, dot, cross, len, unit, lerp, mid, centroid, newellNormal,
   buildEdges, normalize, convexHull,
 } from './geom.js';
+import { L as tr } from './i18n.js';
 
 const PHI = (1 + Math.sqrt(5)) / 2;
 
@@ -371,29 +372,29 @@ export const OPERATORS = {
 };
 
 export const SEEDS = {
-  T: { ja: '正四面体', fn: tetrahedron },
-  C: { ja: '立方体', fn: cube },
-  O: { ja: '正八面体', fn: octahedron },
-  D: { ja: '正十二面体', fn: dodecahedron },
-  I: { ja: '正二十面体', fn: icosahedron },
-  P: { ja: '角柱', fn: prism, n: true },
-  A: { ja: '反角柱', fn: antiprism, n: true },
-  Y: { ja: '角錐', fn: pyramid, n: true },
+  T: { ja: '正四面体', en: 'tetrahedron', fn: tetrahedron },
+  C: { ja: '立方体', en: 'cube', fn: cube },
+  O: { ja: '正八面体', en: 'octahedron', fn: octahedron },
+  D: { ja: '正十二面体', en: 'dodecahedron', fn: dodecahedron },
+  I: { ja: '正二十面体', en: 'icosahedron', fn: icosahedron },
+  P: { ja: '角柱', en: 'prism', fn: prism, n: true },
+  A: { ja: '反角柱', en: 'antiprism', fn: antiprism, n: true },
+  Y: { ja: '角錐', en: 'pyramid', fn: pyramid, n: true },
 };
 
 // "tkD" や "aP6" を解釈する。戻り値 { poly, ops, seed } または例外
 export function parseNotation(str) {
   const s = str.replace(/\s+/g, '');
   const m = s.match(/^([a-z]*)([TCODIPAY])(\d*)$/);
-  if (!m) throw new Error('表記を解釈できません: 例 tI, sC, aP6');
+  if (!m) throw new Error(tr('表記を解釈できません: 例 tI, sC, aP6', 'Cannot read this notation. Examples: tI, sC, aP6'));
   const [, ops, seed, num] = m;
-  for (const ch of ops) if (!OPERATORS[ch]) throw new Error('未知の演算子: ' + ch);
+  for (const ch of ops) if (!OPERATORS[ch]) throw new Error(tr('未知の演算子: ', 'Unknown operator: ') + ch);
   const sd = SEEDS[seed];
   let n = 0;
   if (sd.n) {
     n = parseInt(num || '5', 10);
-    if (!(n >= 3 && n <= 40)) throw new Error('n は 3〜40 で指定してください');
-  } else if (num) throw new Error(seed + ' に数字は付けられません');
+    if (!(n >= 3 && n <= 40)) throw new Error(tr('n は 3〜40 で指定してください', 'n must be between 3 and 40'));
+  } else if (num) throw new Error(tr(seed + ' に数字は付けられません', seed + ' does not take a number'));
   return { ops, seed, n };
 }
 
@@ -403,7 +404,7 @@ export function fromNotation(str, { canonical = true } = {}) {
   // 右から順に適用
   for (let i = ops.length - 1; i >= 0; i--) {
     P = OPERATORS[ops[i]].fn(normalize(P));
-    if (P.faces.length > 6000) throw new Error('面数が多すぎます（6000面まで）');
+    if (P.faces.length > 6000) throw new Error(tr('面数が多すぎます（6000面まで）', 'Too many faces (limit 6000)'));
   }
   if (ops.length && canonical) {
     const C = canonicalize(P);

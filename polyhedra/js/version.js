@@ -1,12 +1,28 @@
-// version.js — 版番号と改版履歴（日英の両方を持つ。英語表示は次の段階で使う）
+// version.js — 版番号と改版履歴（日英の両方を持つ）
 // 版番号は「主.副.修正」: 名称や基本構成の変更で主、機能の追加で副、修正で修正の番号を上げる。
 // 日付は日本時間の公開日。
 
 export const APP_NAME = 'Hyperfolder';
-export const VERSION = '2.3.0';
+export const VERSION = '2.4.0';
 export const RELEASED = '2026-10-17';
 
 export const HISTORY = [
+  {
+    v: '2.4.0', date: '2026-10-17',
+    title: { ja: '英語表示', en: 'English interface' },
+    items: {
+      ja: [
+        'ヘッダーの「EN／日本語」ボタンで、アプリの表示を日本語と英語で切り替えられるようにした（設定はこのブラウザに保存。URL に ?lang=en も使える）',
+        '面の種類、胞の名前、四次元の投影と模型、デモの字幕、型紙の凡例とフッター、棒模型の部材表も英語に対応',
+        '概要と改版履歴、詳細技術解説の英語版を追加し、各ページから言語を切り替えられるようにした',
+      ],
+      en: [
+        'An EN / 日本語 button in the header switches the app between Japanese and English (remembered in this browser; ?lang=en in the URL also works)',
+        'Face types, cell names, 4D projections and models, demo captions, the net legend and footer, and the strut list are translated too',
+        'English editions of the overview and the technical notes, with a language switch on every page',
+      ],
+    },
+  },
   {
     v: '2.3.0', date: '2026-10-17',
     title: { ja: '版番号と解説文書', en: 'Version number and documentation' },

@@ -1,6 +1,7 @@
 // four.js — 四次元ポリトープ：胞の構成、4次元回転、3次元投影、胞の3D展開
 import { convexHull, newellNormal } from './geom.js';
 import { fromNotation, ringRadius } from './conway.js';
+import { L as tr } from './i18n.js';
 
 const PHI = (1 + Math.sqrt(5)) / 2;
 
@@ -243,7 +244,7 @@ export function buildPolytope(V) {
   cells.forEach((c) => {
     const sig = shapeSignature(c.shape.vertices);
     let t = types.findIndex((x) => x.sig === sig);
-    if (t < 0) { t = types.length; types.push({ sig, count: 0, rep: c, name: nameShape(c.shape) }); }
+    if (t < 0) { t = types.length; types.push({ sig, count: 0, rep: c, names: nameShape(c.shape), get name() { return tr(this.names.ja, this.names.en); } }); }
     types[t].count++;
     c.type = t;
   });
@@ -282,20 +283,23 @@ export function shapeSignature(pts) {
 }
 
 const SHAPE_NAMES = {
-  '4:4:3': '正四面体', '8:6:4': '立方体', '6:8:3': '正八面体', '20:12:5': '正十二面体', '12:20:3': '正二十面体',
-  '12:14:3,4': '立方八面体', '12:8:3,6': '切頂四面体', '24:14:3,8': '切頂六面体', '24:14:4,6': '切頂八面体',
-  '60:32:5,6': '切頂二十面体',
+  '4:4:3': ['正四面体', 'Tetrahedron'], '8:6:4': ['立方体', 'Cube'], '6:8:3': ['正八面体', 'Octahedron'],
+  '20:12:5': ['正十二面体', 'Dodecahedron'], '12:20:3': ['正二十面体', 'Icosahedron'],
+  '12:14:3,4': ['立方八面体', 'Cuboctahedron'], '12:8:3,6': ['切頂四面体', 'Truncated tetrahedron'],
+  '24:14:3,8': ['切頂六面体', 'Truncated cube'], '24:14:4,6': ['切頂八面体', 'Truncated octahedron'],
+  '60:32:5,6': ['切頂二十面体', 'Truncated icosahedron'],
 };
+const PRISM_EN = { 3: 'Triangular', 5: 'Pentagonal', 6: 'Hexagonal', 7: 'Heptagonal', 8: 'Octagonal', 9: 'Enneagonal', 10: 'Decagonal', 12: 'Dodecagonal' };
 function nameShape(S) {
   const sides = [...new Set(S.faces.map((f) => f.length))].sort((a, b) => a - b);
   const key = `${S.vertices.length}:${S.faces.length}:${sides.join(',')}`;
-  if (SHAPE_NAMES[key]) return SHAPE_NAMES[key];
+  if (SHAPE_NAMES[key]) return { ja: SHAPE_NAMES[key][0], en: SHAPE_NAMES[key][1] };
   // 角柱
   if (S.faces.length === S.vertices.length / 2 + 2 && sides.includes(4)) {
     const n = S.vertices.length / 2;
-    return n === 4 ? '立方体' : `正${n}角柱`;
+    return n === 4 ? { ja: '立方体', en: 'Cube' } : { ja: `正${n}角柱`, en: `${PRISM_EN[n] || n + '-gonal'} prism` };
   }
-  return `${S.faces.length}面体`;
+  return { ja: `${S.faces.length}面体`, en: `${S.faces.length}-hedron` };
 }
 
 // ---------- 4次元回転・投影 ----------

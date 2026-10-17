@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Technical Notes — Hyperfolder</title>
+  <meta name="description" content="How Hyperfolder computes (generating and canonicalizing polyhedra, nets, projecting and unfolding 4D polytopes), with a timeline of the mathematical history of polyhedra, references, and related software and websites.">
+  <link rel="alternate" hreflang="ja" href="technical.html">
+  <link rel="alternate" hreflang="en" href="technical.en.html">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+  <header class="doc-top">
+    <a class="doc-brand" href="./?lang=en"><b>Hyperfolder</b><i>Between Dimensions</i></a>
+    <nav class="doc-nav" aria-label="Documentation">
+      <a href="about.en.html">About &amp; history</a>
+      <a href="technical.en.html" aria-current="page">Technical notes</a>
+      <a href="./?lang=en">Open the app</a>
+      <a href="technical.html" hreflang="ja" lang="ja" class="lang-switch">日本語</a>
+    </nav>
+  </header>
+
+  <main class="doc">
+    <p class="doc-eyebrow">Technical notes</p>
+    <h1>Technical Notes</h1>
+    <p class="lede">How Hyperfolder computes, and the background behind it</p>
+    <p class="meta">For version <span id="cur-ver">2.4.0</span> / <a href="about.en.html">Back to About &amp; history</a></p>
+
+    <nav class="toc" aria-label="Contents">
+      <p>Contents</p>
+      <ol>
+        <li><a href="#structure">Structure</a></li>
+        <li><a href="#generate">Representation and generation</a></li>
+        <li><a href="#analyze">Shape analysis</a></li>
+        <li><a href="#nets">Nets</a></li>
+        <li><a href="#fourd">4D polytopes</a></li>
+        <li><a href="#view">Display and interaction</a></li>
+        <li><a href="#timeline">Timeline of the mathematics of polyhedra</a></li>
+        <li><a href="#references">References</a></li>
+        <li><a href="#apps">Related software</a></li>
+        <li><a href="#sites">Related websites</a></li>
+        <li><a href="#license">License and credits</a></li>
+      </ol>
+    </nav>
+
+    <!-- ===================================================== -->
+    <h2 id="structure">1. Structure</h2>
+    <p>Hyperfolder is a web app that does all its computation inside the browser, without a server. It bundles the open-source three.js (r160) for 3D rendering; all geometric computation is done in its own JavaScript. The main modules are:</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Module</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td><code>geom.js</code></td><td>Vector arithmetic, face normals, volume, 3D convex hull</td></tr>
+        <tr><td><code>conway.js</code></td><td>Seed polyhedra, Conway operations, canonicalization</td></tr>
+        <tr><td><code>library.js</code></td><td>Named polyhedra (Johnson solids, stellations, geodesics, etc.)</td></tr>
+        <tr><td><code>analysis.js</code></td><td>Classification of congruent faces, vertex configurations, dihedral angles, coloring</td></tr>
+        <tr><td><code>unfold.js</code></td><td>Net generation, overlap testing, glue tabs, symmetry scoring</td></tr>
+        <tr><td><code>netview.js</code></td><td>Layout on paper; SVG, DXF and OBJ export</td></tr>
+        <tr><td><code>four.js</code> / <code>mode4d.js</code></td><td>Determining the cells of 4D polytopes, projection, 4D rotation, unfolding cells, models</td></tr>
+        <tr><td><code>viewer3d.js</code></td><td>3D view, inertial rotation, folding animation</td></tr>
+        <tr><td><code>demo.js</code> / <code>mobile.js</code></td><td>Demo mode, phone layout</td></tr>
+        <tr><td><code>i18n.js</code></td><td>Japanese / English switching (a phrase table for fixed text; computed text chosen when shown)</td></tr>
+      </tbody>
+    </table></div>
+
+    <!-- ===================================================== -->
+    <h2 id="generate">2. Representation and generation</h2>
+    <h3 id="repr">2.1 Representation</h3>
+    <p>A polyhedron is represented by a list of vertex coordinates and, for each face, the list of vertex indices around it. The vertices of each face are ordered counterclockwise as seen from outside, so that the right-hand rule gives the outward normal. Edges are derived from the faces. This orientation convention underlies the decision of which side of the net is the front and which folds are mountain or valley folds.</p>
+
+    <h3 id="hull">2.2 Convex hull</h3>
+    <p>Many Johnson solids are built as the convex hull (the smallest convex polyhedron enclosing all the points) of a set of vertices made by stacking “rings” of regular polygons at different heights. The hull is computed incrementally, adding one point at a time, as a collection of triangles; coplanar triangles are then merged into a single polygon. Cupolae are built from rings of a 2n-gon and an n-gon, rotundae from half of an icosidodecahedron, and the rest from combinations of prisms, antiprisms and cupolae.</p>
+
+    <h3 id="conway">2.3 Conway operations</h3>
+    <p>Conway polyhedron notation describes a shape by applying operators, from right to left, to a seed polyhedron (T, C, O, D, I, the prism P<sub>n</sub>, the antiprism A<sub>n</sub>, the pyramid Y<sub>n</sub>). For example, <code>tI</code> is the truncation (t) of the icosahedron (I): the soccer-ball-shaped truncated icosahedron.</p>
+    <p>The implementation builds dual d, ambo a, kis k, gyro g, chamfer c and propeller p directly as primitive operations, and defines the others as compositions:</p>
+    <div class="formula">t = dkd   j = da   e = aa   o = daa   b = dkda
+m = kda   n = kd   z = dk   s = dgd</div>
+    <p>The primitive operations work by rewriting the incidences of faces, vertices and edges (flags), so the topology (how everything is connected) comes out exact. The coordinates, however, are only provisional, and the shape is tidied up by the canonicalization that follows.</p>
+
+    <h3 id="canonical">2.4 Canonicalization</h3>
+    <p>It is known that for every convex polyhedron there is, for each combinatorial type, exactly one shape (the canonical form) that satisfies the following three conditions at once (a theorem based on the circle-packing theory of Koebe, Thurston and others):</p>
+    <ol>
+      <li>Every edge is tangent to the unit sphere (the midsphere).</li>
+      <li>The centroid of the points where the edges touch the sphere is at the origin.</li>
+      <li>Every face is planar.</li>
+    </ol>
+    <p>Following George W. Hart’s iterative algorithm (1997), the vertices are moved a little at a time towards these three conditions, repeating until the movement falls below 10<sup>−11</sup> (at most 4000 iterations, adjusted to the number of edges). In an Archimedean solid all vertices are equivalent under symmetry, so the canonical form coincides with the uniform shape with equal edge lengths. Indeed, for all 13 the ratio of edge lengths comes out as 1.000000 (except the truncated icosidodecahedron, at 1.000005). The Catalan solids are obtained by canonicalizing the duals of the Archimedean solids in the same way.</p>
+
+    <h3 id="stellation">2.5 Stellations and geodesics</h3>
+    <ul>
+      <li><b>Stellated octahedron, small stellated dodecahedron</b> — On each face, a pyramid is erected whose apex is the point where the planes of the neighboring faces, extended, meet (the first stellation).</li>
+      <li><b>Great dodecahedron</b> — Each face of the icosahedron is indented using the plane of the regular pentagon around a vertex.</li>
+      <li><b>Great stellated dodecahedron</b> — On each face of the icosahedron, a triangular pyramid made of golden triangles with a 36° apex angle is erected.</li>
+      <li><b>Geodesic sphere</b> — Each face of the icosahedron is divided into f×f triangles (Class I) and the vertices are pushed out onto the sphere. The dome is the upper half of the sphere with a vertex pointing up; when f is even, the equator runs exactly along edges.</li>
+      <li><b>Goldberg polyhedron</b> — The polar dual of a geodesic sphere. The poles of the planes of the faces containing a vertex v all lie on the plane x·v = 1, so the faces are automatically planar.</li>
+    </ul>
+
+    <!-- ===================================================== -->
+    <h2 id="analyze">3. Shape analysis</h2>
+    <dl class="terms">
+      <dt>Congruent-face classes</dt><dd>Each face is described by its sequence of edge lengths and interior angles; congruent faces are grouped by comparing the representation that is minimal under rotation and reflection (lengths rounded to 1/2000 of the longest edge, angles to 0.05°). This is used for coloring, the legend, and identifying the kinds of parts in a geodesic dome.</dd>
+      <dt>Vertex configuration</dt><dd>The sequence of the numbers of sides of the faces around a vertex (e.g. <code>3.4.5.4</code>), written in its minimal form under rotation and reflection.</dd>
+      <dt>Dihedral angle</dt><dd>Obtained from the angle θ between the normals of adjacent faces: π − θ at a convex edge and π + θ at a reflex (concave) edge. Convex edges are mountain folds and reflex edges are valley folds (when assembled with the printed side outward).</dd>
+      <dt>Volume and surface area</dt><dd>Computed as sums over the faces using the divergence theorem, and displayed scaled to the size of the template.</dd>
+    </dl>
+
+    <!-- ===================================================== -->
+    <h2 id="nets">4. Nets</h2>
+    <h3 id="tree">4.1 A net is a spanning tree of the faces</h3>
+    <p>Consider the graph whose vertices are the faces and whose edges are the shared edges (the dual graph). Choosing a spanning tree of this graph determines a net: the tree’s edges become folds and all other edges become cuts. The root face is laid on the plane, and each child face is placed by a rigid motion so that its shared edge coincides with the same edge of its parent.</p>
+
+    <h3 id="overlap">4.2 Overlap testing</h3>
+    <p>Each time a new face is placed, it is checked against the faces already placed using the separating axis theorem (two convex polygons are disjoint exactly when their projections onto the normal direction of some edge of one of them are separated). Faces that merely touch at an edge or vertex are not counted as overlapping. A preliminary test with bounding rectangles saves computation.</p>
+
+    <h3 id="paper">4.3 Fitting on the paper</h3>
+    <p>For print nets, each time a face is added, the rotating calipers method is applied to the convex hull of the whole piece to find its minimum bounding rectangle, and the piece is checked to fit within the printable area (the paper minus the margins and footer). If it does not fit, that face starts a new piece.</p>
+
+    <h3 id="tabs">4.4 Glue tabs and numbering</h3>
+    <p>Each pair of cut edges is given the same number, and a glue tab is attached to one of them. The tabs are trapezoids whose side angles are at most 50° and at most 92% of the angle of the face they are glued to. If a tab would overlap an adjacent face or another tab, 19 shapes with progressively narrower end angles and heights are tried in turn. At a vertex where the gap in the net is almost 0°, a tab physically cannot fit, so such edges are reported on screen as “edges without tabs”.</p>
+
+    <h3 id="symmetric">4.5 On screen: nets chosen for symmetry</h3>
+    <p>The on-screen view and the 3D unfolding animation use the same symmetry-first net.</p>
+    <ul>
+      <li><b>Growth order</b> — Faces are added from the root face in order of depth, then distance from the root, then angle around the root. When the root is a regular polygon, angles are compared in the same order within each sector (2π / number of sides), so the net grows with rotational symmetry.</li>
+      <li><b>Choice of center</b> — Besides centering on a face, the net is also grown from the <b>midpoint of an edge</b> where two congruent faces meet, with a sector of π and the same order on both sides. Twofold-symmetric shapes, such as the dodecahedron net with two “flowers” side by side, come from this option.</li>
+      <li><b>Symmetry scoring</b> — Treating the face centroids as points labelled by congruence class, the net is tested for coincidence under k-fold rotation about its center (k = 12, 10, 8, 6, 5, 4, 3, 2) and under reflection in mirror axes (the directions of the centroids and the directions halfway between them), within a tolerance of 2% of the edge length. The score is the order of rotation × (2 if there is a mirror).</li>
+      <li><b>Selection</b> — Candidates are ranked by: connected in one piece → no missing tabs → higher symmetry → more compact.</li>
+      <li><b>Tabs</b> — Tabs follow the rule “on the side farther from the center; if equal, on the counterclockwise side”, so that the result is the same under rotation. Nets with mirror symmetry are displayed with the axis of symmetry vertical.</li>
+    </ul>
+
+    <h3 id="print">4.6 For printing: layouts chosen for paper efficiency</h3>
+    <p>For print, SVG and DXF, several candidates with different roots and growth orders (compact, breadth-first, strip, random) are generated under the paper constraints, and the best is chosen by: missing tabs → number of pages → number of pieces → paper usage. Each piece is rotated to the orientation of its minimum bounding rectangle and packed onto shelves in order of height (First-Fit Decreasing).</p>
+
+    <h3 id="fold3d">4.7 3D unfolding animation</h3>
+    <p>Each face opens into the plane of its parent when rotated about their shared edge by the angle that brings the two faces’ normals into line. These rotations are composed from parent to child in the original 3D coordinates and scaled in proportion to the unfold amount t. At t = 1 all faces lie in the plane of the root face, giving the same shape as the on-screen net.</p>
+
+    <h3 id="durer">4.8 An open problem</h3>
+    <p>The question “Can every convex polyhedron be cut open along its edges alone into a single non-overlapping net?” is called Dürer’s problem, after Dürer’s nets, and has remained unsolved since G. C. Shephard formulated it in 1975. Hyperfolder’s unfolding is heuristic, but every convex polyhedron in the library unfolds into a single piece. For nonconvex polyhedra, a non-overlapping edge unfolding may not exist at all; in that case the net is split into several pieces.</p>
+
+    <!-- ===================================================== -->
+    <h2 id="fourd">5. 4D polytopes</h2>
+    <h3 id="coords">5.1 Vertex coordinates</h3>
+    <ul>
+      <li>Tesseract (8-cell): the 16 points (±1, ±1, ±1, ±1)</li>
+      <li>16-cell: the 8 permutations of (±1, 0, 0, 0)</li>
+      <li>24-cell: the 24 permutations of (±1, ±1, 0, 0)</li>
+      <li>600-cell: (±½, ±½, ±½, ±½), the permutations of (±1, 0, 0, 0), and the even permutations of ½(±φ, ±1, ±1/φ, 0) — 120 points in all (φ is the golden ratio)</li>
+      <li>120-cell: 600 points in seven families of coordinates involving the golden ratio</li>
+      <li>Uniform polychora, polyhedral prisms and duoprisms are likewise built from permutations of coordinates and Cartesian products.</li>
+    </ul>
+
+    <h3 id="cells">5.2 Finding the cells</h3>
+    <p>In a convex 4D polytope, the edges are the pairs of points at the shortest distance (all the shapes treated here have equal edge lengths). For each vertex v, centrally projecting the directions to its neighbors onto a hyperplane on the opposite side from v gives a three-dimensional “vertex figure”. Each face of its convex hull corresponds to a cell containing v. The normal of the cell’s hyperplane is found as the vector orthogonal to three edge vectors (a generalized cross product), and all vertices lying on that hyperplane are collected to form the cell. The shape of the cell is obtained by taking the convex hull in 3D coordinates within the hyperplane. The result is checked with the Euler characteristic V − E + F − C = 0 (it holds for all 20).</p>
+
+    <h3 id="projection">5.3 Projection to 3D</h3>
+    <dl class="terms">
+      <dt>Schlegel diagram</dt><dd>A perspective projection from a viewpoint on the axis through the center of the nearest cell, just outside that cell’s hyperplane. Placing the viewpoint so that it lies beyond only the nearest cell’s hyperplane and no other (r<sub>f</sub> &lt; d &lt; d<sub>max</sub>) makes the nearest cell the outer shell, with the remaining cells filling its interior without gaps.</dd>
+      <dt>Perspective (vertex first)</dt><dd>A perspective projection with the viewpoint in the direction of a vertex.</dd>
+      <dt>Parallel projection</dt><dd>A projection that simply drops the fourth coordinate. The vertex-first parallel projection of the tesseract has the outline of a rhombic dodecahedron.</dd>
+    </dl>
+
+    <h3 id="rotation4d">5.4 4D rotation</h3>
+    <p>Rotations in the three planes XW, YW and ZW are combined. Because the Schlegel viewpoint is very close to the solid, rotating would carry the viewpoint inside it. The viewpoint is therefore smoothly pulled back, according to the amount of rotation, to outside the circumscribed sphere (1.8 times its radius).</p>
+
+    <h3 id="unfold4d">5.5 Unfolding the cells into 3D</h3>
+    <p>This is the same idea as a 3D net, raised by one dimension. In 4D, the face (two-dimensional) shared by a parent cell and its child is held fixed, and the child is rotated within the two-dimensional plane orthogonal to that face. This plane is spanned by the two cells’ normals; rotating by the angle between the normals opens the child cell into the same hyperplane as its parent. Overlap between cells is tested with the three-dimensional separating axis theorem (using face normals and cross products of pairs of edges as axes). Even the 120-cell and 600-cell yield non-overlapping nets in a single connected piece. During unfolding, the view switches smoothly from perspective to parallel projection, so that the cells’ true shapes are visible once fully opened.</p>
+
+    <h3 id="models4d">5.6 Models</h3>
+    <ul>
+      <li><b>Projected cells (3D puzzle)</b> — Perspective projection maps planes to planes and convex sets to convex sets, so each cell of a Schlegel diagram is a convex polyhedron. With the nearest cell as the outer shell, templates are made for the remaining cells, grouped by congruence class.</li>
+      <li><b>Outline of the projection</b> — The convex hull of all the projected vertices.</li>
+      <li><b>True-shape cells</b> — Templates for the cells in their true shape, as many of each kind as are needed.</li>
+      <li><b>Strut-model parts list</b> — The edges of the projection are grouped by length to 0.1 mm and tabulated together with the number of struts meeting at each node.</li>
+    </ul>
+
+    <!-- ===================================================== -->
+    <h2 id="view">6. Display and interaction</h2>
+    <ul>
+      <li>Faces have their own vertices, for the folding animation; edges and vertices are drawn as instanced cylinders and spheres. Back faces are drawn in the color of paper, so the reverse side is visible during unfolding.</li>
+      <li>Rotation keeps the speed of the drag as angular velocity, so the solid keeps turning, gradually slowing, after release.</li>
+      <li>Demo mode runs from a small script that loads scenes, rotates and unfolds in sequence.</li>
+      <li>On phones, each settings block is moved into a tab of the control panel and sliders are replaced by steppers. Switching back to the desktop layout returns them to their original places.</li>
+    </ul>
+
+    <!-- ===================================================== -->
+    <h2 id="timeline">7. Timeline of the mathematics of polyhedra</h2>
+    <p class="note">Dates follow the generally accepted accounts. “c.” indicates that the date is approximate.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Year</th><th>Person / event</th></tr></thead>
+      <tbody>
+        <tr><td class="year">c. 360 BC</td><td>Plato, <i>Timaeus</i>. Associates the four elements and the cosmos with the five regular polyhedra (the origin of the name “Platonic solids”).</td></tr>
+        <tr><td class="year">c. 300 BC</td><td>Euclid, <i>Elements</i>, Book XIII. Constructions of the five regular polyhedra and a proof that no others exist.</td></tr>
+        <tr><td class="year">3rd c. BC</td><td>Archimedes describes the 13 semiregular polyhedra (the Archimedean solids). The work is lost and known through Pappus’s account in the 4th century.</td></tr>
+        <tr><td class="year">1509</td><td>Luca Pacioli, <i>De divina proportione</i>, with Leonardo da Vinci’s skeletal drawings of polyhedra.</td></tr>
+        <tr><td class="year">1525</td><td>Albrecht Dürer, <i>Underweysung der Messung</i>. Shows nets of the regular polyhedra and several Archimedean solids (among the earliest printed nets).</td></tr>
+        <tr><td class="year">1568</td><td>Wenzel Jamnitzer, <i>Perspectiva corporum regularium</i>. Depicts variations on the polyhedra in exquisite engravings.</td></tr>
+        <tr><td class="year">1619</td><td>Johannes Kepler, <i>Harmonices Mundi</i>. Systematically rediscovers the 13 Archimedean solids and describes the small and great stellated dodecahedra.</td></tr>
+        <tr><td class="year">c. 1630</td><td>René Descartes notes that the angular defects at the vertices of a polyhedron sum to 4π (720°), a precursor of Euler’s formula.</td></tr>
+        <tr><td class="year">1750s</td><td>Leonhard Euler shows V − E + F = 2 for the numbers of vertices, edges and faces of a convex polyhedron.</td></tr>
+        <tr><td class="year">1809</td><td>Louis Poinsot discovers the great dodecahedron and great icosahedron (with Kepler’s two, the four regular star polyhedra).</td></tr>
+        <tr><td class="year">1813</td><td>Augustin-Louis Cauchy proves that these four are the only regular star polyhedra.</td></tr>
+        <tr><td class="year">c. 1852</td><td>Ludwig Schläfli classifies the regular polytopes in four and more dimensions (six in four dimensions). Little known in his lifetime; published in 1901.</td></tr>
+        <tr><td class="year">1865</td><td>Eugène Catalan describes the duals of the Archimedean solids (the Catalan solids).</td></tr>
+        <tr><td class="year">1880</td><td>Washington Stringham independently finds the regular four-dimensional polytopes and illustrates them.</td></tr>
+        <tr><td class="year">1880s</td><td>Victor Schlegel devises a way of drawing four-dimensional polytopes in three dimensions (the Schlegel diagram).</td></tr>
+        <tr><td class="year">1884</td><td>Edwin A. Abbott, <i>Flatland</i>, a novel depicting higher dimensions through the eyes of a two-dimensional inhabitant.</td></tr>
+        <tr><td class="year">1888</td><td>Charles H. Hinton, <i>A New Era of Thought</i>, using the word “tesseract”.</td></tr>
+        <tr><td class="year">1900</td><td>Alicia Boole Stott studies three-dimensional sections of four-dimensional polytopes and popularizes the word “polytope” in English.</td></tr>
+        <tr><td class="year">1938</td><td>H. S. M. Coxeter et al., <i>The Fifty-Nine Icosahedra</i>: the 59 stellations of the icosahedron.</td></tr>
+        <tr><td class="year">1948</td><td>Coxeter, <i>Regular Polytopes</i>, the standard reference on regular polyhedra and polytopes.</td></tr>
+        <tr><td class="year">1954</td><td>Coxeter, Longuet-Higgins and Miller enumerate the uniform polyhedra (75).</td></tr>
+        <tr><td class="year">1965</td><td>John H. Conway and Michael Guy study the four-dimensional uniform polytopes and discover the “grand antiprism”.</td></tr>
+        <tr><td class="year">1966</td><td>Norman Johnson enumerates the 92 convex polyhedra with regular polygonal faces (the Johnson solids). In 1969 Zalgaller proves the list complete.</td></tr>
+        <tr><td class="year">1971</td><td>Magnus Wenninger, <i>Polyhedron Models</i>, the classic of making polyhedra in paper.</td></tr>
+        <tr><td class="year">1975</td><td>G. C. Shephard asks whether every convex polyhedron has a non-overlapping edge unfolding (Dürer’s problem; still open).</td></tr>
+        <tr><td class="year">1990s</td><td>George W. Hart systematizes Conway polyhedron notation and publishes it on the web; in 1997 he presents a numerical algorithm for canonicalization.</td></tr>
+        <tr><td class="year">2000</td><td>Robert Webb releases “Stella: Polyhedron Navigator”, later developed into Great Stella / Stella4D.</td></tr>
+        <tr><td class="year">2026</td><td>Hyperfolder released.</td></tr>
+      </tbody>
+    </table></div>
+
+    <!-- ===================================================== -->
+    <h2 id="references">8. References</h2>
+    <h3>Classics and foundations</h3>
+    <ol class="refs">
+      <li>Euclid, <i>Elements</i>, Book XIII (Japanese translation: Nakamura Kōshirō, Terasaka Hidetaka, Itō Shuntarō, Ikeda Mie, trans., <i lang="ja">ユークリッド原論</i> [<i>Yūkuriddo genron</i>], Kyōritsu Shuppan, 1971).<span class="why">The classical proof that there are only five regular polyhedra.</span></li>
+      <li>H. S. M. Coxeter, <i>Regular Polytopes</i>, 3rd ed., Dover, 1973. (Japanese translation: Hitotsumatsu Shin, supervising ed., <i lang="ja">正多胞体</i> [<i>Sei tahōtai</i>], Maruzen Publishing, 2022.)<span class="why">A systematic treatment of regular polyhedra and polytopes; the basis for the 4D coordinates and the approach to projection.</span></li>
+      <li>H. S. M. Coxeter, M. S. Longuet-Higgins, J. C. P. Miller, “Uniform Polyhedra,” <i>Philosophical Transactions of the Royal Society A</i> 246 (1954), 401–450.</li>
+      <li>N. W. Johnson, “Convex Polyhedra with Regular Faces,” <i>Canadian Journal of Mathematics</i> 18 (1966), 169–200.<span class="why">Source of the names and numbers (J1–J92) of the Johnson solids.</span></li>
+      <li>Hitotsumatsu Shin, <i lang="ja">正多面体を解く</i> [<i>Sei tamentai o toku</i>, “Solving the Regular Polyhedra”], Tokai University Press, 1983.</li>
+    </ol>
+    <h3>Geometry and unfolding of polyhedra</h3>
+    <ol class="refs" start="6">
+      <li>Peter R. Cromwell, <i>Polyhedra</i>, Cambridge University Press, 1997.<span class="why">Covers the mathematics and history of polyhedra broadly; used to check many items in the timeline.</span></li>
+      <li>Erik D. Demaine, Joseph O’Rourke, <i>Geometric Folding Algorithms: Linkages, Origami, Polyhedra</i>, Cambridge University Press, 2007.<span class="why">Computational geometry of nets: existence, overlap, Dürer’s problem and more.</span></li>
+      <li>G. C. Shephard, “Convex Polytopes with Convex Nets,” <i>Mathematical Proceedings of the Cambridge Philosophical Society</i> 78 (1975), 389–403.</li>
+      <li>John H. Conway, Heidi Burgiel, Chaim Goodman-Strauss, <i>The Symmetries of Things</i>, A K Peters, 2008.<span class="why">Describing symmetry, and notation for operations on polyhedra.</span></li>
+    </ol>
+    <h3>Algorithms and models</h3>
+    <ol class="refs" start="10">
+      <li>George W. Hart, “Calculating Canonical Polyhedra,” <i>Mathematica in Education and Research</i> 6(3) (1997), 5–10.<span class="why">Source of the canonicalization algorithm.</span></li>
+      <li>George W. Hart, “Conway Notation for Polyhedra,” <i>Virtual Polyhedra</i>. <a href="https://georgehart.com/virtual-polyhedra/conway_notation.html" target="_blank" rel="noopener">georgehart.com</a></li>
+      <li>Magnus J. Wenninger, <i>Polyhedron Models</i>, Cambridge University Press, 1971; <i>Dual Models</i>, 1983.<span class="why">The classics on making paper models and their templates.</span></li>
+      <li>Robert Webb, “Stella: Polyhedron Navigator,” <i>Symmetry: Culture and Science</i>, 2000.</li>
+    </ol>
+    <h3>Higher dimensions</h3>
+    <ol class="refs" start="14">
+      <li>Thomas F. Banchoff, <i>Beyond the Third Dimension</i>, Scientific American Library, 1990.<span class="why">Visualizing higher dimensions through projections, slices and shadows.</span></li>
+      <li>Edwin A. Abbott, <i>Flatland: A Romance of Many Dimensions</i>, 1884.<span class="why">Source of the homage in the app’s introductory text.</span></li>
+    </ol>
+
+    <!-- ===================================================== -->
+    <h2 id="apps">9. Related software</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Name</th><th>Author / publisher</th><th>Features</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://www.software3d.com/Stella.php" target="_blank" rel="noopener">Great Stella / Stella4D</a></td><td>Robert Webb (Software3D)</td><td>The leading software for displaying and stellating polyhedra and printing nets. Stella4D also handles 4D projections, cross-sections and 3D nets. The starting point for the idea of Hyperfolder. Paid (Windows, Mac).</td></tr>
+        <tr><td>polyHédronisme</td><td>Anselm Levskaya</td><td>Open-source web app that generates polyhedra from Conway notation.</td></tr>
+        <tr><td><a href="https://www.andrewmarsh.com/software/poly3d-web/" target="_blank" rel="noopener">Polyhedra Generator</a></td><td>Andrew Marsh</td><td>Web app for generating polyhedra with Conway notation.</td></tr>
+        <tr><td><a href="https://antiprism.com/" target="_blank" rel="noopener">Antiprism</a></td><td>Adrian Rossiter</td><td>A suite of command-line programs for generating and transforming polyhedra, including canonicalization. Open source.</td></tr>
+        <tr><td><a href="https://tamasoft.co.jp/pepakura-en/" target="_blank" rel="noopener">Pepakura Designer</a></td><td>Tama Software</td><td>Turns general 3D models into papercraft nets, adding glue tabs and edge numbers automatically.</td></tr>
+        <tr><td>Poly / Poly Pro</td><td>Pedagoguery Software</td><td>Educational software for rotating and unfolding polyhedra.</td></tr>
+        <tr><td><a href="https://4dtoys.com/" target="_blank" rel="noopener">4D Toys</a></td><td>Marc ten Bosch</td><td>A physics-simulation toy that shows four-dimensional objects through their three-dimensional cross-sections.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">What sets Hyperfolder apart: it is free and runs entirely in the browser; it uses separate nets for the screen (symmetry) and for printing (paper efficiency); it goes from projections of 4D polytopes all the way to 3D puzzles and strut-model parts lists; and it switches between Japanese and English.</p>
+
+    <!-- ===================================================== -->
+    <h2 id="sites">10. Related websites</h2>
+    <ul class="refs">
+      <li><a href="https://georgehart.com/virtual-polyhedra/vp.html" target="_blank" rel="noopener">Virtual Polyhedra: The Encyclopedia of Polyhedra</a> (George W. Hart)<span class="why">An encyclopedic site on polyhedra, including explanations of Conway notation and canonical forms.</span></li>
+      <li><a href="https://polytope.miraheze.org/wiki/Main_Page" target="_blank" rel="noopener">Polytope Wiki</a><span class="why">A collaboratively edited wiki on the classification and description of polytopes: regular, uniform, Johnson and more.</span></li>
+      <li><a href="https://bendwavy.org/klitzing/home.htm" target="_blank" rel="noopener">Polytopes &amp; their incidence matrices</a> (Richard Klitzing)<span class="why">Incidence structures and numerical data for polyhedra and polytopes.</span></li>
+      <li><a href="https://dmccooey.com/polyhedra/" target="_blank" rel="noopener">Visual Polyhedra</a> (David I. McCooey)<span class="why">Coordinate data and images for a large number of polyhedra.</span></li>
+      <li><a href="https://4d.pardesco.com/gallery" target="_blank" rel="noopener">Polytope Gallery</a><span class="why">A gallery of projections of four-dimensional polytopes.</span></li>
+      <li><a href="https://mathworld.wolfram.com/topics/VisualPolyhedra.html" target="_blank" rel="noopener">Wolfram MathWorld — Polyhedra</a><span class="why">Explanations of terms and properties of polyhedra.</span></li>
+    </ul>
+    <p class="note">The content of linked sites is maintained by their operators and may change (checked October 2026).</p>
+
+    <!-- ===================================================== -->
+    <h2 id="license">11. License and credits</h2>
+    <ul>
+      <li>3D rendering: <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> r160 (MIT License) is bundled.</li>
+      <li>The implementation of the Conway operations draws on the ideas of George W. Hart and polyHédronisme.</li>
+      <li><i>Flatland</i> (1884) is in the public domain.</li>
+      <li>App and documentation: © 2026 Miyamoto. Generative AI was used in their production.</li>
+    </ul>
+
+    <footer class="doc-foot">
+      <a href="./?lang=en">Open the app</a>
+      <a href="about.en.html">About &amp; history</a>
+      <a href="../">res-miyamoto.com</a>
+      <a href="technical.html" hreflang="ja" lang="ja">日本語</a>
+    </footer>
+  </main>
+
+  <script type="module">
+    import { VERSION } from './js/version.js';
+    document.getElementById('cur-ver').textContent = VERSION;
+  </script>
+</body>
+</html>
