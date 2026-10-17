@@ -9,6 +9,7 @@ import { POLYTOPES } from './four.js';
 import { Mode4D, PROJECTIONS, MODELS } from './mode4d.js';
 import { Demo } from './demo.js';
 import { MobileUI } from './mobile.js';
+import { VERSION } from './version.js';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (x, d = 1) => (Number.isFinite(x) ? x.toFixed(d) : '—');
@@ -948,6 +949,7 @@ $('btn-demo').addEventListener('click', (e) => {
 initControls();
 renderLibrary();
 mobileUI = new MobileUI();
+$('ver-chip').textContent = 'v' + VERSION;
 if (location.hash === '#demo') {
   document.body.dataset.keepHash = '1';
   loadItem(findItem('tI'));

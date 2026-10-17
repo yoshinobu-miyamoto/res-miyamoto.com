@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>詳細技術解説 — Hyperfolder</title>
+  <meta name="description" content="Hyperfolder の計算の仕組み（多面体の生成と正準化、展開図、四次元ポリトープの投影と展開）、多面体に関する数学史年表、参考文献、類似アプリと類似サイト。">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+  <header class="doc-top">
+    <a class="doc-brand" href="./"><b>Hyperfolder</b><i>Between Dimensions</i></a>
+    <nav class="doc-nav" aria-label="解説文書">
+      <a href="about.html">概要と改版履歴</a>
+      <a href="technical.html" aria-current="page">詳細技術解説</a>
+      <a href="./">アプリを開く</a>
+    </nav>
+  </header>
+
+  <main class="doc">
+    <p class="doc-eyebrow">Technical notes</p>
+    <h1>詳細技術解説</h1>
+    <p class="lede">Hyperfolder の計算の仕組みと、その背景</p>
+    <p class="meta">対象の版 <span id="cur-ver">2.3.0</span> ／ <a href="about.html">概要と改版履歴へ戻る</a></p>
+
+    <nav class="toc" aria-label="目次">
+      <p>目次</p>
+      <ol>
+        <li><a href="#structure">全体の構成</a></li>
+        <li><a href="#generate">多面体の表現と生成</a></li>
+        <li><a href="#analyze">形の解析</a></li>
+        <li><a href="#nets">展開図</a></li>
+        <li><a href="#fourd">四次元ポリトープ</a></li>
+        <li><a href="#view">表示と操作</a></li>
+        <li><a href="#timeline">多面体に関する数学史年表</a></li>
+        <li><a href="#references">参考文献</a></li>
+        <li><a href="#apps">類似アプリ</a></li>
+        <li><a href="#sites">類似サイト</a></li>
+        <li><a href="#license">ライセンスと謝辞</a></li>
+      </ol>
+    </nav>
+
+    <!-- ===================================================== -->
+    <h2 id="structure">1. 全体の構成<span class="en">Structure</span></h2>
+    <p>Hyperfolder は、サーバーを使わずブラウザの中だけで計算するウェブアプリです。3D描画にはオープンソースの three.js（r160）を同梱して使い、幾何計算はすべて自前の JavaScript で行います。主なモジュールは次のとおりです。</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>モジュール</th><th>役割</th></tr></thead>
+      <tbody>
+        <tr><td><code>geom.js</code></td><td>ベクトル演算、面法線、体積、3次元凸包</td></tr>
+        <tr><td><code>conway.js</code></td><td>種多面体、コンウェイ演算、正準化</td></tr>
+        <tr><td><code>library.js</code></td><td>名前付きの多面体（ジョンソンの立体、星型、ジオデシックなど）</td></tr>
+        <tr><td><code>analysis.js</code></td><td>面の合同分類、頂点配置、二面角、配色</td></tr>
+        <tr><td><code>unfold.js</code></td><td>展開図の生成、重なり判定、のりしろ、対称性の評価</td></tr>
+        <tr><td><code>netview.js</code></td><td>用紙への割付、SVG・DXF・OBJ の出力</td></tr>
+        <tr><td><code>four.js</code> / <code>mode4d.js</code></td><td>四次元ポリトープの胞の決定、投影、4次元回転、胞の展開、模型</td></tr>
+        <tr><td><code>viewer3d.js</code></td><td>3D表示、慣性回転、折り畳みアニメーション</td></tr>
+        <tr><td><code>demo.js</code> / <code>mobile.js</code></td><td>デモ・モード、スマホ向けの操作画面</td></tr>
+      </tbody>
+    </table></div>
+
+    <!-- ===================================================== -->
+    <h2 id="generate">2. 多面体の表現と生成<span class="en">Representation and generation</span></h2>
+    <h3 id="repr">2.1 表現</h3>
+    <p>多面体は「頂点の座標の並び」と「各面を囲む頂点番号の並び」で表します。面の頂点は外側から見て反時計回りに並べ、右手の法則で外向きの法線が得られるようにしています。辺は面から導きます。この向きの約束が、展開図の表裏や山折り／谷折りの判定の土台になります。</p>
+
+    <h3 id="hull">2.2 凸包</h3>
+    <p>ジョンソンの立体の多くは、正多角形の「環」を高さを変えて積み重ねた頂点の集まりから、凸包（すべての点を包む最小の凸多面体）として作ります。凸包は点を一つずつ加える逐次法で三角形の集まりとして求め、同じ平面にある三角形を一枚の多角形にまとめます。台塔は 2n 角形と n 角形の環から、円塔は二十・十二面体の半分から、その他は角柱・反角柱・台塔の組み合わせから作ります。</p>
+
+    <h3 id="conway">2.3 コンウェイ演算</h3>
+    <p>コンウェイの多面体表記は、種となる多面体（T・C・O・D・I、角柱 P<sub>n</sub>、反角柱 A<sub>n</sub>、角錐 Y<sub>n</sub>）に、演算子を右から順に作用させて形を表します。たとえば <code>tI</code> は正二十面体（I）の切頂（t）で、サッカーボール形の切頂二十面体になります。</p>
+    <p>実装では、双対 d・中点切断 a・角錐化 k・ジャイロ g・面取り c・プロペラ p を基本演算として直接作り、その他は組み合わせで定義しています。</p>
+    <div class="formula">t = dkd   j = da   e = aa   o = daa   b = dkda
+m = kda   n = kd   z = dk   s = dgd</div>
+    <p>基本演算は、面と頂点と辺の対応（フラグ）を書き換える方式で作るため、位相（つながり方）は正確に得られます。ただし座標は仮のものなので、次の正準化で形を整えます。</p>
+
+    <h3 id="canonical">2.4 正準化</h3>
+    <p>凸多面体には、次の3つの条件を同時に満たす形（正準形）が、位相ごとにただ一つ存在することが知られています（ケーベやサーストンらによる円充填の理論に基づく定理）。</p>
+    <ol>
+      <li>すべての辺が単位球（中球）に接する</li>
+      <li>辺と球の接点の重心が原点にある</li>
+      <li>すべての面が平らである</li>
+    </ol>
+    <p>George W. Hart の反復アルゴリズム（1997年）にならい、この3条件に近づくよう頂点を少しずつ動かす操作を、動きが 10<sup>−11</sup> 未満になるまで繰り返します（最大4000回。辺の数に応じて調整）。アルキメデスの立体ではすべての頂点が対称性で同等なので、正準形は辺の長さがそろった一様な形と一致します。実際、13種すべてで辺の長さの比は 1.000000 になります（斜方切頂二十・十二面体のみ 1.000005）。カタランの立体は、アルキメデスの立体の双対を同じ方法で正準化して得ます。</p>
+
+    <h3 id="stellation">2.5 星型とジオデシック</h3>
+    <ul>
+      <li><b>星型八面体・小星型十二面体</b> — 各面の上に、隣り合う面の平面を延長して交わる点を頂点とする角錐を立てます（第一星型）。</li>
+      <li><b>大十二面体</b> — 正二十面体の各面を、頂点まわりの正五角形の平面でくぼませます。</li>
+      <li><b>大星型十二面体</b> — 正二十面体の各面に、頂角36°の黄金三角形でできた三角錐を立てます。</li>
+      <li><b>ジオデシック球</b> — 正二十面体の各面を f×f 個の三角形に分け（クラスⅠ）、頂点を球面に押し出します。ドームは頂点を上に向けた球の上半分で、f が偶数なら赤道がちょうど辺に沿います。</li>
+      <li><b>ゴールドバーグ多面体</b> — ジオデシック球の極双対です。頂点 v を含む面の平面の極は、すべて平面 x·v = 1 の上にあるため、面は自動的に平らになります。</li>
+    </ul>
+
+    <!-- ===================================================== -->
+    <h2 id="analyze">3. 形の解析<span class="en">Analysis</span></h2>
+    <dl class="terms">
+      <dt>面の合同分類</dt><dd>各面を「辺の長さと内角の列」で表し、回転と裏返しに対して最小になる表現を比べて、合同な面をまとめます（長さは最長辺の1/2000、角度は0.05°で丸め）。色分けや凡例、ジオデシックドームの部材の種類の把握に使います。</dd>
+      <dt>頂点配置</dt><dd>頂点のまわりに並ぶ面の辺の数の列（例 <code>3.4.5.4</code>）を、回転と裏返しに対して最小の形で表します。</dd>
+      <dt>二面角</dt><dd>隣り合う面の法線のなす角 θ から求めます。凸な辺では π − θ、へこんだ辺では π + θ で、凸な辺は山折り、へこんだ辺は谷折りになります（印刷面を外側にして組む場合）。</dd>
+      <dt>体積・表面積</dt><dd>発散定理による面ごとの和で求め、型紙の大きさに換算して表示します。</dd>
+    </dl>
+
+    <!-- ===================================================== -->
+    <h2 id="nets">4. 展開図<span class="en">Nets</span></h2>
+    <h3 id="tree">4.1 展開図は「面の全域木」</h3>
+    <p>面を点、共有する辺を線とみなしたグラフ（双対グラフ）の全域木を一つ選ぶと、その木の辺を折り目、それ以外の辺を切り込みとする展開図が決まります。根の面を平面に置き、子の面を「共有する辺が親の同じ辺に重なる」ように剛体移動して並べていきます。</p>
+
+    <h3 id="overlap">4.2 重なりの判定</h3>
+    <p>新しい面を置くたびに、すでに置いた面と重ならないかを分離軸定理（二つの凸多角形が重ならないのは、どちらかの辺の法線方向への投影が離れているときに限る）で調べます。辺や頂点で接するだけの場合は重なりとみなしません。外接長方形による前判定で、計算を省きます。</p>
+
+    <h3 id="paper">4.3 用紙への収まり</h3>
+    <p>印刷用の展開では、面を加えるたびに、ピース全体の凸包に回転キャリパー法を当てて最小の外接長方形を求め、印刷できる範囲（用紙から余白とフッターを除いた範囲）に収まるかを確かめます。収まらなければ、その面は別のピースとして始めます。</p>
+
+    <h3 id="tabs">4.4 のりしろと番号</h3>
+    <p>切り込みになる辺の組には同じ番号を振り、片方にのりしろを付けます。のりしろは台形で、側辺の角度は50°以下、かつ貼り合わせる相手の面の角の92%以下にします。隣の面や他ののりしろに重なる場合は、両端の角度と高さを段階的に絞った19通りの形を順に試します。展開図の切れ込みがほぼ0°の頂点では物理的に入らないため、その辺は画面に「のりしろなしの辺」として知らせます。</p>
+
+    <h3 id="symmetric">4.5 画面用：対称性を優先した展開</h3>
+    <p>画面表示と3Dの展開アニメーションでは、同じ「対称性を優先した展開図」を使います。</p>
+    <ul>
+      <li><b>育て方</b> — 根の面から「段数 → 根からの距離 → 根のまわりの角度」の順に面を加えます。根が正多角形なら、角度は扇形（2π／辺数）ごとに同じ順で比べるため、回転対称に育ちます。</li>
+      <li><b>中心の選び方</b> — 面を中心にする場合に加え、合同な2面が接する<b>辺の中点</b>を中心に、扇形を π として左右同じ順に育てる場合も試します。正十二面体の「花形が二つ並ぶ」展開図のような2回対称の形は、こちらから得られます。</li>
+      <li><b>対称性の評価</b> — 面の重心を合同類つきの点として、展開図の中心まわりに k 回回転（k = 12, 10, 8, 6, 5, 4, 3, 2）して重なるか、また鏡映軸（重心の方向とその中間の方向）について重なるかを、辺の長さの2%以内の誤差で調べます。評価値は「回転の次数 ×（鏡映があれば2）」です。</li>
+      <li><b>選び方</b> — 1枚につながる → のりしろが欠けない → 対称性が高い → まとまりがよい、の順に選びます。</li>
+      <li><b>のりしろ</b> — 「中心から遠い側、同じなら反時計回りの側」に付ける規則にして、回転しても同じ結果になるようにしています。鏡映対称の展開図は対称軸を縦にして表示します。</li>
+    </ul>
+
+    <h3 id="print">4.6 印刷用：面積効率を優先した割付</h3>
+    <p>印刷・SVG・DXF では、根や育て方を変えた複数の候補（まとまり重視・幅優先・帯状・乱数）を用紙の制約つきで作り、のりしろの欠け → ページ数 → ピース数 → 用紙の使用率、の順に最良のものを選びます。ピースは最小外接長方形の向きに回転し、高さの順に棚へ詰めるように並べます（First-Fit Decreasing）。</p>
+
+    <h3 id="fold3d">4.7 3Dの展開アニメーション</h3>
+    <p>各面は、親の面と共有する辺を軸に、二つの面の法線を一致させる角度だけ回転すると親と同じ平面に開きます。この回転を元の三次元座標のまま親から子へ合成し、展開の度合い t に比例させて動かします。t = 1 ですべての面が根の面の平面にそろい、画面の展開図と同じ形になります。</p>
+
+    <h3 id="durer">4.8 未解決の問題</h3>
+    <p>「すべての凸多面体は、辺に沿って切り開くだけで、重なりのない一枚の展開図にできるか」という問題は、デューラーの展開図にちなんで「デューラーの問題」と呼ばれ、1975年に G. C. Shephard が定式化して以来、今も解かれていません。Hyperfolder の展開は経験的な方法ですが、ライブラリの凸多面体はすべて一枚にまとまります。へこみのある多面体では、重なりのない辺展開そのものが存在しない場合があり、そのときは複数のピースに分けます。</p>
+
+    <!-- ===================================================== -->
+    <h2 id="fourd">5. 四次元ポリトープ<span class="en">4D polytopes</span></h2>
+    <h3 id="coords">5.1 頂点の座標</h3>
+    <ul>
+      <li>正八胞体（テッセラクト）: (±1, ±1, ±1, ±1) の16点</li>
+      <li>正十六胞体: (±1, 0, 0, 0) の並べ替えの8点</li>
+      <li>正二十四胞体: (±1, ±1, 0, 0) の並べ替えの24点</li>
+      <li>正六百胞体: (±½, ±½, ±½, ±½)、(±1, 0, 0, 0) の並べ替え、½(±φ, ±1, ±1/φ, 0) の偶置換、の計120点（φ は黄金比）</li>
+      <li>正百二十胞体: 黄金比を含む7系統の座標の計600点</li>
+      <li>一様多胞体・多面体柱・デュオプリズムも、座標の並べ替えや直積で作ります。</li>
+    </ul>
+
+    <h3 id="cells">5.2 胞の求め方</h3>
+    <p>四次元の凸ポリトープでは、辺の両端の距離が最短になる点の組が辺になります（ここで扱う形はすべて辺の長さがそろっています）。各頂点 v について、隣の頂点への方向を v の反対側の超平面へ中心投影すると、三次元の「頂点図形」が得られます。その凸包の各面が、v を含む胞に対応します。胞の超平面の法線は、3本の辺ベクトルに直交するベクトル（一般化した外積）で求め、その超平面上にある頂点をすべて集めて胞とします。胞の形は、超平面内の三次元座標で凸包をとって得ます。結果は、オイラー標数 V − E + F − C = 0 で確かめています（20種すべてで成立）。</p>
+
+    <h3 id="projection">5.3 3次元への投影</h3>
+    <dl class="terms">
+      <dt>シュレーゲル図</dt><dd>手前の胞の中心を通る軸の上、胞の超平面のすぐ外側に視点を置いて透視投影します。視点が手前の胞の超平面だけを越え、他の胞の超平面を越えない範囲（r<sub>f</sub> &lt; d &lt; d<sub>max</sub>）に置くと、手前の胞が外殻になり、残りの胞がその内側をすき間なく埋める図になります。</dd>
+      <dt>透視投影（頂点を手前に）</dt><dd>頂点の方向に視点を置く透視投影です。</dd>
+      <dt>平行投影</dt><dd>第4座標を落とすだけの投影です。正八胞体を頂点から平行投影すると菱形十二面体の外形になります。</dd>
+    </dl>
+
+    <h3 id="rotation4d">5.4 4次元回転</h3>
+    <p>XW・YW・ZW の3つの平面での回転を組み合わせます。シュレーゲル図の視点は立体にごく近いため、回転すると視点が立体に入り込みます。そこで回転量に応じて、視点を外接球の外（半径の1.8倍）まで滑らかに下げます。</p>
+
+    <h3 id="unfold4d">5.5 胞の3D展開</h3>
+    <p>三次元の展開図と同じ考え方を一段上げたものです。四次元では、親と子の胞が共有する面（2次元）を固定したまま、その面に直交する2次元の平面の中で回転させます。この平面は二つの胞の法線で張られ、法線のなす角だけ回すと子の胞が親と同じ超平面に開きます。胞どうしの重なりは、三次元の分離軸定理（面の法線と、辺どうしの外積を軸にする）で判定します。正百二十胞体や正六百胞体でも、重なりのない一つながりの展開図が得られます。展開の途中は、透視投影から平行投影へ滑らかに切り替えて、開ききったときに胞の本来の形が見えるようにしています。</p>
+
+    <h3 id="models4d">5.6 模型</h3>
+    <ul>
+      <li><b>投影した胞（立体パズル）</b> — 透視投影は平面を平面に、凸を凸に写すので、シュレーゲル図の各胞は凸多面体になります。手前の胞を外殻として、残りの胞を合同類ごとにまとめた型紙を作ります。</li>
+      <li><b>投影の外形</b> — 投影した頂点全体の凸包です。</li>
+      <li><b>胞の実形</b> — 本来の形の胞を、種類ごとに必要な数だけ作る型紙です。</li>
+      <li><b>棒模型の部材表</b> — 投影図の辺を0.1 mm 単位で長さ別にまとめ、節点に集まる部材の数とともに表にします。</li>
+    </ul>
+
+    <!-- ===================================================== -->
+    <h2 id="view">6. 表示と操作<span class="en">Display and interaction</span></h2>
+    <ul>
+      <li>面は折り畳みアニメーションのため面ごとに頂点を持ち、辺と頂点は円柱と球をインスタンス描画で並べます。裏面は紙の色で描き、展開の途中で裏側が見えるようにしています。</li>
+      <li>回転はドラッグの速さを角速度として保持し、手を離した後も減衰しながら回り続けます。</li>
+      <li>デモ・モードは、シーンの読み込み・回転・展開を順に実行する小さな台本で動いています。</li>
+      <li>スマホでは、各設定ブロックを操作パネルのタブへ移し、スライダーをステッパーに置き換えます。パソコン表示に戻すと元の位置に戻ります。</li>
+    </ul>
+
+    <!-- ===================================================== -->
+    <h2 id="timeline">7. 多面体に関する数学史年表<span class="en">Timeline</span></h2>
+    <p class="note">年代は通説によります。「頃」は年代に幅があることを示します。</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>年</th><th>人物・出来事</th></tr></thead>
+      <tbody>
+        <tr><td class="year">前360頃</td><td>プラトン『ティマイオス』。4つの元素と宇宙を5つの正多面体に対応させる（「プラトンの立体」の名の由来）。</td></tr>
+        <tr><td class="year">前300頃</td><td>ユークリッド『原論』第13巻。5種の正多面体の作図と、それ以外に存在しないことの証明。</td></tr>
+        <tr><td class="year">前3世紀</td><td>アルキメデス、13種の半正多面体（アルキメデスの立体）を記述。著作は失われ、4世紀のパップスの記述で伝わる。</td></tr>
+        <tr><td class="year">1509</td><td>ルカ・パチョーリ『神聖比例論』。レオナルド・ダ・ヴィンチによる骨組み表現の多面体図を収める。</td></tr>
+        <tr><td class="year">1525</td><td>アルブレヒト・デューラー『測定法教則』。正多面体やいくつかのアルキメデスの立体の展開図を示す（展開図の最初期の印刷例）。</td></tr>
+        <tr><td class="year">1568</td><td>ヴェンツェル・ヤムニッツァー『正多面体の遠近法』。多面体の変形を精緻な版画で描く。</td></tr>
+        <tr><td class="year">1619</td><td>ヨハネス・ケプラー『世界の調和』。アルキメデスの立体13種を体系的に再発見し、小星型十二面体と大星型十二面体を記述。</td></tr>
+        <tr><td class="year">1630頃</td><td>ルネ・デカルト、多面体の頂点の角欠損の総和が 4π（720°）になることを記す（オイラーの公式の先駆け）。</td></tr>
+        <tr><td class="year">1750年代</td><td>レオンハルト・オイラー、凸多面体の頂点・辺・面の数について V − E + F = 2 を示す。</td></tr>
+        <tr><td class="year">1809</td><td>ルイ・ポアンソ、大十二面体と大二十面体を発見（ケプラーの2種と合わせて星型正多面体4種）。</td></tr>
+        <tr><td class="year">1813</td><td>オーギュスタン＝ルイ・コーシー、星型正多面体がこの4種に限ることを証明。</td></tr>
+        <tr><td class="year">1852頃</td><td>ルートヴィヒ・シュレーフリ、四次元以上の正多胞体を分類（四次元は6種）。生前は広く知られず、1901年に出版。</td></tr>
+        <tr><td class="year">1865</td><td>ウジェーヌ・カタラン、アルキメデスの立体の双対（カタランの立体）を記述。</td></tr>
+        <tr><td class="year">1880</td><td>ワシントン・ストリンガム、四次元の正多胞体を独立に見いだし、図示する。</td></tr>
+        <tr><td class="year">1880年代</td><td>ヴィクトル・シュレーゲル、四次元多胞体を三次元に描く方法（シュレーゲル図）を考案。</td></tr>
+        <tr><td class="year">1884</td><td>エドウィン・A・アボット『フラットランド』。二次元の住人の目で高次元を描いた小説。</td></tr>
+        <tr><td class="year">1888</td><td>チャールズ・H・ヒントン『A New Era of Thought』。「テッセラクト」の語を用いる。</td></tr>
+        <tr><td class="year">1900</td><td>アリシア・ブール・ストット、四次元多胞体の三次元断面を研究し、「ポリトープ」の語を英語圏に広める。</td></tr>
+        <tr><td class="year">1938</td><td>H. S. M. コクセターほか『The Fifty-Nine Icosahedra』。正二十面体の星型59種。</td></tr>
+        <tr><td class="year">1948</td><td>コクセター『Regular Polytopes』。正多面体・正多胞体研究の基本文献。</td></tr>
+        <tr><td class="year">1954</td><td>コクセター、ロンゲット＝ヒギンズ、ミラー、一様多面体（75種）を列挙。</td></tr>
+        <tr><td class="year">1965</td><td>ジョン・H・コンウェイとマイケル・ガイ、四次元の一様多胞体を調べ「大反角柱」を発見。</td></tr>
+        <tr><td class="year">1966</td><td>ノーマン・ジョンソン、正多角形の面だけでできた凸多面体92種（ジョンソンの立体）を列挙。1969年、ザルガラーが完全性を証明。</td></tr>
+        <tr><td class="year">1971</td><td>マグナス・ウェニンガー『Polyhedron Models』。紙で多面体を作る模型制作の古典。</td></tr>
+        <tr><td class="year">1975</td><td>G. C. シェパード、凸多面体の重なりのない辺展開の存在を問う（デューラーの問題。未解決）。</td></tr>
+        <tr><td class="year">1990年代</td><td>ジョージ・W・ハート、コンウェイの多面体表記を体系化してウェブで公開。1997年に正準化の数値アルゴリズムを発表。</td></tr>
+        <tr><td class="year">2000</td><td>ロバート・ウェッブ「Stella: Polyhedron Navigator」発表。のちの Great Stella／Stella4D へ発展する。</td></tr>
+        <tr><td class="year">2026</td><td>Hyperfolder 公開。</td></tr>
+      </tbody>
+    </table></div>
+
+    <!-- ===================================================== -->
+    <h2 id="references">8. 参考文献<span class="en">References</span></h2>
+    <h3>古典・基本文献</h3>
+    <ol class="refs">
+      <li>ユークリッド『原論』第13巻（邦訳: 中村幸四郎・寺阪英孝・伊東俊太郎・池田美恵 訳『ユークリッド原論』共立出版, 1971）。<span class="why">正多面体が5種に限ることの古典的な証明。</span></li>
+      <li>H. S. M. Coxeter, <i>Regular Polytopes</i>, 3rd ed., Dover, 1973.（邦訳: 一松信 監修『正多胞体』丸善出版, 2022）<span class="why">正多面体・正多胞体の体系的な解説。四次元の座標や投影の考え方の基礎。</span></li>
+      <li>H. S. M. Coxeter, M. S. Longuet-Higgins, J. C. P. Miller, “Uniform Polyhedra,” <i>Philosophical Transactions of the Royal Society A</i> 246 (1954), 401–450.</li>
+      <li>N. W. Johnson, “Convex Polyhedra with Regular Faces,” <i>Canadian Journal of Mathematics</i> 18 (1966), 169–200.<span class="why">ジョンソンの立体の名称と番号（J1〜J92）の出典。</span></li>
+      <li>一松信『正多面体を解く』東海大学出版会, 1983.</li>
+    </ol>
+    <h3>多面体の幾何と展開</h3>
+    <ol class="refs" start="6">
+      <li>Peter R. Cromwell, <i>Polyhedra</i>, Cambridge University Press, 1997.<span class="why">多面体の数学と歴史を広く扱う。年表の多くの項目の確認に用いた。</span></li>
+      <li>Erik D. Demaine, Joseph O’Rourke, <i>Geometric Folding Algorithms: Linkages, Origami, Polyhedra</i>, Cambridge University Press, 2007.<span class="why">展開図の存在、重なり、デューラーの問題などの計算幾何学。</span></li>
+      <li>G. C. Shephard, “Convex Polytopes with Convex Nets,” <i>Mathematical Proceedings of the Cambridge Philosophical Society</i> 78 (1975), 389–403.</li>
+      <li>John H. Conway, Heidi Burgiel, Chaim Goodman-Strauss, <i>The Symmetries of Things</i>, A K Peters, 2008.<span class="why">対称性の記述と、多面体の操作表記。</span></li>
+    </ol>
+    <h3>アルゴリズムと模型</h3>
+    <ol class="refs" start="10">
+      <li>George W. Hart, “Calculating Canonical Polyhedra,” <i>Mathematica in Education and Research</i> 6(3) (1997), 5–10.<span class="why">正準化アルゴリズムの出典。</span></li>
+      <li>George W. Hart, “Conway Notation for Polyhedra,” <i>Virtual Polyhedra</i>. <a href="https://georgehart.com/virtual-polyhedra/conway_notation.html" target="_blank" rel="noopener">georgehart.com</a></li>
+      <li>Magnus J. Wenninger, <i>Polyhedron Models</i>, Cambridge University Press, 1971; <i>Dual Models</i>, 1983.<span class="why">紙模型の作り方と型紙の古典。</span></li>
+      <li>Robert Webb, “Stella: Polyhedron Navigator,” <i>Symmetry: Culture and Science</i>, 2000.</li>
+    </ol>
+    <h3>高次元</h3>
+    <ol class="refs" start="14">
+      <li>Thomas F. Banchoff, <i>Beyond the Third Dimension</i>, Scientific American Library, 1990.<span class="why">投影・断面・影による高次元の視覚化。</span></li>
+      <li>Edwin A. Abbott, <i>Flatland: A Romance of Many Dimensions</i>, 1884.<span class="why">トップページの紹介文のオマージュの出典。</span></li>
+    </ol>
+
+    <!-- ===================================================== -->
+    <h2 id="apps">9. 類似アプリ<span class="en">Related software</span></h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>名称</th><th>作者・提供</th><th>特徴</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://www.software3d.com/Stella.php" target="_blank" rel="noopener">Great Stella / Stella4D</a></td><td>Robert Webb（Software3D）</td><td>多面体の表示・星型化・展開図印刷の代表的なソフト。Stella4D は四次元の投影・断面・3D展開も扱う。Hyperfolder の構想の出発点。有償（Windows・Mac）。</td></tr>
+        <tr><td>polyHédronisme</td><td>Anselm Levskaya</td><td>コンウェイ表記で多面体を生成するオープンソースのウェブアプリ。</td></tr>
+        <tr><td><a href="https://www.andrewmarsh.com/software/poly3d-web/" target="_blank" rel="noopener">Polyhedra Generator</a></td><td>Andrew Marsh</td><td>コンウェイ表記による多面体生成のウェブアプリ。</td></tr>
+        <tr><td><a href="https://antiprism.com/" target="_blank" rel="noopener">Antiprism</a></td><td>Adrian Rossiter</td><td>多面体を生成・変形するコマンドライン群。正準化などを含むオープンソース。</td></tr>
+        <tr><td><a href="https://tamasoft.co.jp/pepakura-en/" target="_blank" rel="noopener">Pepakura Designer</a></td><td>Tama Software</td><td>一般の3Dモデルを紙工作の展開図にするソフト。のりしろや辺の番号の自動付与。</td></tr>
+        <tr><td>Poly / Poly Pro</td><td>Pedagoguery Software</td><td>多面体を回転・展開して観察する教育用ソフト。</td></tr>
+        <tr><td><a href="https://4dtoys.com/" target="_blank" rel="noopener">4D Toys</a></td><td>Marc ten Bosch</td><td>四次元の物体を三次元の断面で見せる物理シミュレーションのおもちゃ。</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Hyperfolder の特色は、ブラウザだけで動き無料であること、画面用（対称性）と印刷用（面積効率）で展開図を分けること、四次元ポリトープの投影から立体パズルや棒模型の部材表まで作れること、日英の切り替えを予定していることです。</p>
+
+    <!-- ===================================================== -->
+    <h2 id="sites">10. 類似サイト<span class="en">Related websites</span></h2>
+    <ul class="refs">
+      <li><a href="https://georgehart.com/virtual-polyhedra/vp.html" target="_blank" rel="noopener">Virtual Polyhedra: The Encyclopedia of Polyhedra</a>（George W. Hart）<span class="why">多面体の百科事典的サイト。コンウェイ表記や正準形の解説を含む。</span></li>
+      <li><a href="https://polytope.miraheze.org/wiki/Main_Page" target="_blank" rel="noopener">Polytope Wiki</a><span class="why">正・一様・ジョンソンなど多胞体の分類と記述を扱う共同編集のウィキ。</span></li>
+      <li><a href="https://bendwavy.org/klitzing/home.htm" target="_blank" rel="noopener">Polytopes &amp; their incidence matrices</a>（Richard Klitzing）<span class="why">多面体・多胞体の接続関係と数値データ。</span></li>
+      <li><a href="https://dmccooey.com/polyhedra/" target="_blank" rel="noopener">Visual Polyhedra</a>（David I. McCooey）<span class="why">多数の多面体の座標データと図。</span></li>
+      <li><a href="https://4d.pardesco.com/gallery" target="_blank" rel="noopener">Polytope Gallery</a><span class="why">四次元多胞体の投影の図版集。</span></li>
+      <li><a href="https://mathworld.wolfram.com/topics/VisualPolyhedra.html" target="_blank" rel="noopener">Wolfram MathWorld — Polyhedra</a><span class="why">多面体の用語と性質の解説。</span></li>
+    </ul>
+    <p class="note">リンク先の内容は各サイトの運営によるもので、変わることがあります（2026年10月確認）。</p>
+
+    <!-- ===================================================== -->
+    <h2 id="license">11. ライセンスと謝辞<span class="en">License and credits</span></h2>
+    <ul>
+      <li>3D描画: <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> r160（MIT License）を同梱しています。</li>
+      <li>コンウェイ演算の実装は George W. Hart と polyHédronisme の考え方を参考にしています。</li>
+      <li>『フラットランド』（1884）はパブリックドメインです。</li>
+      <li>アプリと解説文書: © 2026 Miyamoto。制作には生成AIを併用しています。</li>
+    </ul>
+
+    <footer class="doc-foot">
+      <a href="./">アプリを開く</a>
+      <a href="about.html">概要と改版履歴</a>
+      <a href="../">res-miyamoto.com</a>
+      <span>英語版は次の段階で追加する予定です。</span>
+    </footer>
+  </main>
+
+  <script type="module">
+    import { VERSION } from './js/version.js';
+    document.getElementById('cur-ver').textContent = VERSION;
+  </script>
+</body>
+</html>
