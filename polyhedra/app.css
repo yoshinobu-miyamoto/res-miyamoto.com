@@ -362,6 +362,89 @@ body.demo .gl canvas { cursor: default; }
   * { transition: none !important; animation: none !important; }
 }
 
+/* ---------- スマホ: 立体の下に、タブつきの操作パネル ---------- */
+#msheet, .stepper, .fold-chips { display: none; }
+@media (max-width: 920px) {
+  html, body { height: 100%; }
+  body { overflow: hidden; }
+  .app {
+    --sheet-h: 42dvh;
+    height: 100%;
+    height: 100dvh;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) var(--sheet-h);
+    grid-template-areas: "top" "stage" "sheet";
+  }
+  body.msheet-tall .app { --sheet-h: 66dvh; }
+  .topbar { position: static; flex-wrap: nowrap; padding: 6px max(12px, env(safe-area-inset-right, 0px)) 6px max(12px, env(safe-area-inset-left, 0px)); gap: 8px; }
+  .brand-name { font-size: 18px; }
+  .top-actions { gap: 6px; }
+  .demo-btn { padding: 4px 9px 4px 8px; }
+  .seg button { padding: 4px 10px; }
+  .stage, .stage[data-view="split"] { height: auto; min-height: 0; }
+  .library, .inspector { display: none; }
+  .title-block { left: 14px; top: 10px; max-width: calc(100% - 120px); }
+  .title-block h1 { font-size: 17px; }
+  .poly-en { font-size: 14px; }
+  .tools-3d { right: 10px; top: 10px; }
+  .hover-info { left: 12px; bottom: 58px; }
+
+  #msheet {
+    grid-area: sheet; display: flex; flex-direction: column; min-height: 0;
+    background: var(--panel); border-top: 1px solid var(--line);
+  }
+  .mtabs {
+    display: flex; flex: none; border-bottom: 1px solid var(--line);
+    padding: 0 max(4px, env(safe-area-inset-right, 0px)) 0 max(4px, env(safe-area-inset-left, 0px));
+  }
+  .mtabs button {
+    flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 7px 2px 5px; background: none; border: 0; border-bottom: 2px solid transparent;
+    color: var(--muted); font-size: 10.5px; letter-spacing: 0.08em; cursor: pointer;
+  }
+  .mtabs button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .mtabs button[aria-selected="true"] { color: var(--gold); border-bottom-color: var(--gold); }
+  .mtabs button[hidden] { display: none; }
+  .mtabs .msheet-size { flex: 0 0 40px; justify-content: center; }
+  .mtabs .msheet-size svg { transition: transform .2s ease; }
+  body.msheet-tall .mtabs .msheet-size svg { transform: rotate(180deg); }
+  .msheet-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  #msheet .m-off { display: none !important; }
+  #msheet details > summary.block-title { display: none; }
+  #msheet .block { border-bottom: 1px solid var(--line); }
+
+  /* スライダーをステッパーに */
+  .row { grid-template-columns: 92px minmax(0, 1fr) auto; }
+  .row input[type="range"], .row input[type="range"] + .stepper + output, .row output { display: none; }
+  .stepper {
+    display: inline-grid; grid-template-columns: 44px minmax(56px, 1fr) 44px; align-items: center;
+    grid-column: 2 / -1; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel-2);
+  }
+  .stepper button {
+    height: 36px; border: 0; background: none; color: var(--text); font-size: 18px; line-height: 1; cursor: pointer;
+    touch-action: manipulation; -webkit-user-select: none; user-select: none;
+  }
+  .stepper button:active { background: var(--gold-soft); color: var(--gold); }
+  .st-val { text-align: center; font-family: var(--mono); font-size: 12px; color: var(--gold); font-variant-numeric: tabular-nums; border-left: 1px solid var(--line); border-right: 1px solid var(--line); line-height: 36px; }
+
+  /* 展開スライダーを「閉・半・開」に */
+  .foldbar { display: flex; width: auto; gap: 8px; padding: 4px 10px 4px 4px; bottom: 10px; }
+  .foldbar input[type="range"] { display: none; }
+  .fold-label { white-space: nowrap; }
+  .fold-chips { display: inline-flex; gap: 4px; }
+  .fold-chips button {
+    min-width: 38px; height: 30px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2);
+    color: var(--text); font-size: 12px; cursor: pointer; touch-action: manipulation;
+  }
+  .fold-chips button[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); background: var(--gold-soft); }
+  .foldbar output { order: 5; min-width: 34px; }
+
+  /* デモ中はパネルを隠して立体だけにする */
+  body.demo #msheet { display: none; }
+  body.demo .app { grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "top" "stage"; }
+  body.demo .stage { height: auto; min-height: 0; }
+}
+
 /* ---------- 印刷 ---------- */
 #print-root { display: none; }
 @media print {
