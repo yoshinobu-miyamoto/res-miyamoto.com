@@ -35,7 +35,7 @@
   <!-- ===== ライブラリ ===== -->
   <aside class="panel library" aria-label="多面体ライブラリ">
     <div class="panel-scroll">
-      <section class="block">
+      <section class="block" data-mtab="shape" data-morder="3">
         <h2 class="block-title">コンウェイ表記 <span class="en">Conway notation</span></h2>
         <form class="notation" id="notation-form" autocomplete="off">
           <input id="notation-input" type="text" spellcheck="false" placeholder="例: tI, sC, dkD" aria-label="コンウェイ表記">
@@ -47,12 +47,12 @@
         <label class="check"><input type="checkbox" id="canonical" checked> 正準化（辺を中球に接し、面を平面に整える）</label>
       </section>
 
-      <section class="block">
+      <section class="block" data-mtab="shape" data-morder="2">
         <input id="search" class="search" type="search" placeholder="名前・表記で検索" aria-label="ライブラリを検索">
         <div id="library-list" class="lib-list"></div>
       </section>
 
-      <section class="block help">
+      <section class="block help" data-mtab="shape" data-morder="4">
         <h2 class="block-title">使い方 <span class="en">How to</span></h2>
         <ol>
           <li>左の一覧から形を選ぶか、コンウェイ表記を入力します。</li>
@@ -116,6 +116,9 @@
         <label class="fold-label" for="fold">展開</label>
         <input type="range" id="fold" min="0" max="1000" value="0" aria-label="展開の度合い">
         <output id="fold-out" for="fold">0%</output>
+        <span class="fold-chips" role="group" aria-label="展開の度合い">
+          <button type="button" data-fold="0">閉</button><button type="button" data-fold="0.5">半</button><button type="button" data-fold="1">開</button>
+        </span>
       </div>
     </section>
 
@@ -144,25 +147,25 @@
   <aside class="panel inspector" aria-label="設定">
     <div class="panel-scroll">
 
-      <section class="block" id="param-block" hidden>
+      <section class="block" id="param-block" data-mtab="shape" data-morder="1" hidden>
         <h2 class="block-title">形状 <span class="en">Shape</span></h2>
         <div class="row">
           <label for="param" id="param-label">n</label>
-          <input type="range" id="param" min="3" max="16" step="1" value="6">
+          <input type="range" id="param" data-mstep="1" min="3" max="16" step="1" value="6">
           <output id="param-out" for="param">6</output>
         </div>
       </section>
 
-      <section class="block" id="block-4d" hidden>
+      <section class="block" id="block-4d" data-mtab="4d" hidden>
         <h2 class="block-title">四次元 <span class="en">4D projection</span></h2>
         <div class="row"><label for="proj4">投影</label><select id="proj4"></select></div>
         <div class="row" id="row-front4"><label for="front4">手前の胞</label><select id="front4"></select></div>
-        <div class="row" id="row-dist4"><label for="dist4">視点の距離</label><input type="range" id="dist4" min="0.02" max="0.98" step="0.01" value="0.4"><output id="dist4-out"></output></div>
-        <div class="row"><label for="shrink4">胞の縮小</label><input type="range" id="shrink4" min="0" max="0.45" step="0.01" value="0.12"><output id="shrink4-out"></output></div>
+        <div class="row" id="row-dist4"><label for="dist4">視点の距離</label><input type="range" id="dist4" data-mstep="0.05" min="0.02" max="0.98" step="0.01" value="0.4"><output id="dist4-out"></output></div>
+        <div class="row"><label for="shrink4">胞の縮小</label><input type="range" id="shrink4" data-mstep="0.03" min="0" max="0.45" step="0.01" value="0.12"><output id="shrink4-out"></output></div>
         <p class="info-h">4次元回転</p>
-        <div class="row"><label for="rot-xw">XW 平面</label><input type="range" id="rot-xw" min="-180" max="180" step="1" value="0"><output id="rot-xw-out">0°</output></div>
-        <div class="row"><label for="rot-yw">YW 平面</label><input type="range" id="rot-yw" min="-180" max="180" step="1" value="0"><output id="rot-yw-out">0°</output></div>
-        <div class="row"><label for="rot-zw">ZW 平面</label><input type="range" id="rot-zw" min="-180" max="180" step="1" value="0"><output id="rot-zw-out">0°</output></div>
+        <div class="row"><label for="rot-xw">XW 平面</label><input type="range" id="rot-xw" data-mstep="15" min="-180" max="180" step="1" value="0"><output id="rot-xw-out">0°</output></div>
+        <div class="row"><label for="rot-yw">YW 平面</label><input type="range" id="rot-yw" data-mstep="15" min="-180" max="180" step="1" value="0"><output id="rot-yw-out">0°</output></div>
+        <div class="row"><label for="rot-zw">ZW 平面</label><input type="range" id="rot-zw" data-mstep="15" min="-180" max="180" step="1" value="0"><output id="rot-zw-out">0°</output></div>
         <div class="toggles">
           <label class="check"><input type="checkbox" id="spin4"> 4次元で回し続ける</label>
           <button type="button" class="btn" id="rot4-reset">回転を 0° に戻す</button>
@@ -171,16 +174,16 @@
         <p class="hint" id="hint4">「展開」スライダーで、胞が3次元の展開図に開きます。模型は4次元回転 0° の標準投影から作ります。</p>
       </section>
 
-      <details class="block" open>
+      <details class="block" data-mtab="view" open>
         <summary class="block-title">表示 <span class="en">Display</span></summary>
         <div class="toggles">
           <label class="check"><input type="checkbox" id="show-faces" checked> 面</label>
           <label class="check"><input type="checkbox" id="show-edges" checked> 辺</label>
           <label class="check"><input type="checkbox" id="show-verts"> 頂点</label>
         </div>
-        <div class="row"><label for="opacity">不透明度</label><input type="range" id="opacity" min="0.15" max="1" step="0.01" value="1"><output id="opacity-out">100%</output></div>
-        <div class="row"><label for="edge-w">辺の太さ</label><input type="range" id="edge-w" min="0.002" max="0.04" step="0.001" value="0.011"><output id="edge-w-out"></output></div>
-        <div class="row"><label for="vert-s">頂点の大きさ</label><input type="range" id="vert-s" min="0.01" max="0.08" step="0.001" value="0.024"><output id="vert-s-out"></output></div>
+        <div class="row"><label for="opacity">不透明度</label><input type="range" id="opacity" data-mstep="0.05" min="0.15" max="1" step="0.01" value="1"><output id="opacity-out">100%</output></div>
+        <div class="row"><label for="edge-w">辺の太さ</label><input type="range" id="edge-w" data-mstep="0.002" min="0.002" max="0.04" step="0.001" value="0.011"><output id="edge-w-out"></output></div>
+        <div class="row"><label for="vert-s">頂点の大きさ</label><input type="range" id="vert-s" data-mstep="0.004" min="0.01" max="0.08" step="0.001" value="0.024"><output id="vert-s-out"></output></div>
         <div class="row"><label for="palette">配色</label><select id="palette"></select></div>
         <div class="row"><label for="color-mode">色分け</label>
           <select id="color-mode">
@@ -199,7 +202,7 @@
         <label class="check demo-idle"><input type="checkbox" id="demo-idle"> 90秒操作がないとデモを再生</label>
       </details>
 
-      <details class="block" open>
+      <details class="block" data-mtab="paper" open>
         <summary class="block-title">型紙 <span class="en">Paper model</span></summary>
         <div class="row"><label for="paper">用紙</label>
           <select id="paper"></select>
@@ -217,7 +220,7 @@
         </div>
       </details>
 
-      <details class="block" open>
+      <details class="block" data-mtab="export" open>
         <summary class="block-title">書き出し <span class="en">Export</span></summary>
         <div class="export-grid">
           <button type="button" class="btn btn-gold" id="btn-print">印刷 / PDF</button>
@@ -228,7 +231,7 @@
         <p class="hint">印刷は「実際のサイズ（100%）」で。フッターの 50 mm バーで倍率を確認できます。</p>
       </details>
 
-      <details class="block" open>
+      <details class="block" data-mtab="info" open>
         <summary class="block-title">情報 <span class="en">Properties</span></summary>
         <div id="info"></div>
       </details>

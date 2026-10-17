@@ -8,6 +8,7 @@ import { Viewer3D } from './viewer3d.js';
 import { POLYTOPES } from './four.js';
 import { Mode4D, PROJECTIONS, MODELS } from './mode4d.js';
 import { Demo } from './demo.js';
+import { MobileUI } from './mobile.js';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (x, d = 1) => (Number.isFinite(x) ? x.toFixed(d) : '—');
@@ -42,6 +43,7 @@ const findAny = (id) => findItem(id) || POLYTOPES.find((p) => p.id === id);
 const viewer = new Viewer3D($('gl'));
 viewer.reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const m4 = new Mode4D(viewer);
+let mobileUI = null; // スマホ向けの操作パネル（起動時に作る）
 
 // ---------- 初期UI ----------
 function initControls() {
@@ -176,6 +178,9 @@ function initControls() {
   const fold = $('fold');
   fold.addEventListener('input', () => { stopFoldAnim(); setFold(fold.value / 1000); });
   $('btn-fold').addEventListener('click', toggleFoldAnim);
+  for (const b of document.querySelectorAll('.fold-chips [data-fold]')) {
+    b.addEventListener('click', () => animateFoldTo(parseFloat(b.dataset.fold)));
+  }
 
   // 型紙操作
   for (const b of document.querySelectorAll('[data-netview]')) {
@@ -538,10 +543,25 @@ function hoverFace(f, from) {
 let foldAnim = null;
 function setFold(t) {
   if (is4D()) m4.setFold(t); else viewer.setFold(t);
+  for (const b of document.querySelectorAll('.fold-chips [data-fold]')) b.setAttribute('aria-pressed', String(Math.abs(parseFloat(b.dataset.fold) - t) < 0.01));
   $('fold').value = Math.round(t * 1000);
   $('fold-out').textContent = Math.round(t * 100) + '%';
 }
 function stopFoldAnim() { if (foldAnim) cancelAnimationFrame(foldAnim.raf); foldAnim = null; playIcon(false); }
+// 指定した度合いまで、なめらかに展開する（スマホの「閉・半・開」ボタン）
+function animateFoldTo(to) {
+  stopFoldAnim();
+  const from = $('fold').value / 1000;
+  if (Math.abs(to - from) < 0.001) return;
+  const dur = 2200 * Math.abs(to - from) + 200;
+  const t0 = performance.now();
+  const step = (now) => {
+    const k = Math.min(1, (now - t0) / dur);
+    setFold(from + (to - from) * k);
+    if (k < 1) foldAnim.raf = requestAnimationFrame(step); else stopFoldAnim();
+  };
+  foldAnim = { raf: requestAnimationFrame(step) };
+}
 function toggleFoldAnim() {
   if (foldAnim) { stopFoldAnim(); return; }
   const from = $('fold').value / 1000;
@@ -689,6 +709,7 @@ function leave4D() {
   if (!is4D()) return;
   state.mode = '3d';
   viewer.fitAll = false;
+  mobileUI?.set4D(false);
   m4.setSpin(false);
   $('spin4').checked = false;
   $('block-4d').hidden = true;
@@ -715,6 +736,7 @@ function load4D(item, param) {
   if (!is4D()) setFold(0);
   state.mode = '4d';
   viewer.fitAll = true;
+  mobileUI?.set4D(true);
   state.current = { item, param };
   state.P = null; state.an = null;
   $('block-4d').hidden = false;
@@ -925,6 +947,7 @@ $('btn-demo').addEventListener('click', (e) => {
 // ---------- 起動 ----------
 initControls();
 renderLibrary();
+mobileUI = new MobileUI();
 if (location.hash === '#demo') {
   document.body.dataset.keepHash = '1';
   loadItem(findItem('tI'));
