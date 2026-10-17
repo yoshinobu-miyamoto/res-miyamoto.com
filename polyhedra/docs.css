@@ -1,0 +1,134 @@
+/* ===== Hyperfolder — 解説文書（概要と改版履歴・詳細技術解説） =====
+   読み物のための一段組み。色と書体はアプリ本体（墨・生成り・金）にそろえる。 */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  --ink: #0f0f0e;
+  --panel: #161614;
+  --panel-2: #1e1d1a;
+  --line: #2d2b27;
+  --text: #e8e4de;
+  --muted: #9a958b;
+  --gold: #c4a265;
+  --gold-soft: rgba(196, 162, 101, 0.12);
+  --display: 'Cormorant Garamond', 'Noto Serif JP', Georgia, serif;
+  --serif-ja: 'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+  --sans: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.9;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--gold); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a:hover { color: #d9bd86; }
+:focus-visible { outline: 1.5px solid var(--gold); outline-offset: 2px; }
+
+/* ---------- ヘッダー ---------- */
+.doc-top {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+  background: rgba(15, 15, 14, 0.92); border-bottom: 1px solid var(--line); backdrop-filter: blur(8px);
+}
+.doc-brand { display: flex; align-items: baseline; gap: 10px; text-decoration: none; color: var(--text); }
+.doc-brand b { font-family: var(--display); font-weight: 400; font-size: 21px; letter-spacing: 0.06em; }
+.doc-brand i { font-family: var(--display); color: var(--gold); font-size: 14px; }
+.doc-nav { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; letter-spacing: 0.06em; }
+.doc-nav a { color: var(--muted); text-decoration: none; }
+.doc-nav a[aria-current="page"], .doc-nav a:hover { color: var(--gold); }
+
+/* ---------- 本文 ---------- */
+.doc {
+  max-width: 760px; margin: 0 auto;
+  padding: 48px max(20px, env(safe-area-inset-right, 0px)) 80px max(20px, env(safe-area-inset-left, 0px));
+}
+.doc-eyebrow { margin: 0; font-family: var(--display); color: var(--gold); letter-spacing: 0.35em; text-transform: uppercase; font-size: 13px; }
+.doc h1 { margin: 6px 0 4px; font-family: var(--display); font-weight: 400; font-size: clamp(34px, 6vw, 52px); letter-spacing: 0.04em; line-height: 1.15; }
+.doc .lede { margin: 0 0 8px; font-family: var(--serif-ja); font-size: 16px; color: var(--muted); letter-spacing: 0.08em; }
+.doc .meta { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.doc h2 {
+  margin: 56px 0 14px; padding-top: 14px; border-top: 1px solid var(--line);
+  font-family: var(--serif-ja); font-weight: 500; font-size: 22px; letter-spacing: 0.08em; scroll-margin-top: 72px;
+}
+.doc h2 .en { margin-left: 10px; font-family: var(--display); font-style: italic; color: var(--gold); font-size: 17px; letter-spacing: 0.02em; font-weight: 400; }
+.doc h3 { margin: 32px 0 8px; font-family: var(--serif-ja); font-weight: 500; font-size: 17px; letter-spacing: 0.06em; scroll-margin-top: 72px; }
+.doc p, .doc li { text-wrap: pretty; }
+.doc ul, .doc ol { padding-left: 1.4em; }
+.doc li + li { margin-top: 4px; }
+.doc code { font-family: var(--mono); font-size: 0.88em; background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+.doc .note { color: var(--muted); font-size: 13.5px; }
+.doc .formula { font-family: var(--mono); font-size: 13.5px; background: var(--panel); border-left: 2px solid var(--gold); padding: 10px 14px; margin: 12px 0; overflow-x: auto; white-space: pre; line-height: 1.7; }
+.doc dl.terms { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 18px; }
+.doc dl.terms dt { color: var(--gold); font-family: var(--serif-ja); }
+.doc dl.terms dd { margin: 0; }
+
+/* 目次 */
+.toc { margin: 28px 0 0; padding: 18px 22px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; }
+.toc p { margin: 0 0 6px; font-size: 12px; letter-spacing: 0.2em; color: var(--muted); }
+.toc ol { margin: 0; padding-left: 1.4em; columns: 2 240px; column-gap: 28px; font-size: 14px; }
+.toc li { break-inside: avoid; }
+.toc a { color: var(--text); text-decoration: none; }
+.toc a:hover { color: var(--gold); }
+
+/* 表 */
+.table-wrap { overflow-x: auto; margin: 12px 0; }
+.doc table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 520px; }
+.doc th, .doc td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.doc th { font-weight: 500; color: var(--muted); font-size: 12.5px; letter-spacing: 0.08em; }
+.doc td.year { font-family: var(--mono); color: var(--gold); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* 改版履歴 */
+.doc ol.history { list-style: none; padding: 0; margin: 0; }
+.history > li { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 4px 18px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.history > li:first-child { padding-top: 4px; }
+.history .ver { font-family: var(--mono); color: var(--gold); font-size: 15px; }
+.history .date { display: block; font-family: var(--mono); color: var(--muted); font-size: 11.5px; }
+.history h3 { margin: 0 0 4px; font-size: 16px; }
+.history ul { margin: 0; padding-left: 1.2em; font-size: 14px; color: var(--text); }
+.history > li.current .ver::after { content: '最新'; margin-left: 6px; font-family: var(--sans); font-size: 10px; letter-spacing: 0.1em; color: var(--ink); background: var(--gold); border-radius: 3px; padding: 1px 5px; vertical-align: 2px; }
+
+/* リンクカード */
+.link-card {
+  display: block; margin: 20px 0; padding: 20px 22px; border: 1px solid var(--line); border-radius: 4px;
+  text-decoration: none; color: var(--text); background: linear-gradient(120deg, var(--panel) 0%, var(--ink) 100%);
+  transition: border-color .25s;
+}
+.link-card:hover { border-color: var(--gold); color: var(--text); }
+.link-card b { display: block; font-family: var(--serif-ja); font-weight: 500; font-size: 18px; letter-spacing: 0.06em; }
+.link-card span { display: block; margin-top: 4px; color: var(--muted); font-size: 13.5px; }
+.link-card em { display: inline-block; margin-top: 10px; font-style: normal; color: var(--gold); font-size: 13px; letter-spacing: 0.12em; }
+
+/* 参考文献・リンク集 */
+.refs { padding-left: 1.6em; font-size: 14px; }
+.refs li { margin-top: 8px; }
+.refs .why { display: block; color: var(--muted); font-size: 13px; }
+
+.epigraph { margin: 28px 0 0; text-align: center; font-family: var(--display); font-style: italic; color: var(--muted); font-size: 17px; line-height: 1.8; }
+.epigraph cite { display: block; margin-top: 6px; font-style: normal; font-size: 13px; color: var(--gold); letter-spacing: 0.1em; }
+
+.doc-foot { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px 18px; }
+
+@media (max-width: 560px) {
+  body { font-size: 14.5px; }
+  .doc { padding-top: 32px; }
+  .history > li { grid-template-columns: minmax(0, 1fr); }
+  .doc dl.terms { grid-template-columns: minmax(0, 1fr); }
+  .doc dl.terms dd { margin-bottom: 8px; }
+}
+
+@media print {
+  body { background: #fff; color: #111; }
+  .doc-top { position: static; background: #fff; }
+  a { color: #6b5320; }
+  .toc, .link-card, .doc .formula { background: #f6f3ec; }
+}

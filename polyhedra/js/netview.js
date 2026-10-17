@@ -1,5 +1,6 @@
 // netview.js — 展開図の用紙割付・SVG/DXF 出力
 import { minRect, hull2D } from './unfold.js';
+import { VERSION } from './version.js';
 
 export const PAPERS = {
   A4: { ja: 'A4', w: 210, h: 297 },
@@ -206,7 +207,7 @@ export function pageSVG(page, dec, layout, opt) {
   const fy = H - PAGE_MARGIN - 3.2;
   const x0 = PAGE_MARGIN;
   out.push(`<g font-size="2.6" fill="#555">`);
-  out.push(`<text x="${x0}" y="${f2(fy)}">${esc(opt.title)}${opt.notation ? '  ·  ' + esc(opt.notation) : ''}  ·  ${esc(opt.sizeLabel || '最長辺')} ${f2(opt.edgeMM)} mm  ·  ${opt.footerNote ? esc(opt.footerNote) : opt.pageNo + ' / ' + opt.pageCount}  ·  Hyperfolder</text>`);
+  out.push(`<text x="${x0}" y="${f2(fy)}">${esc(opt.title)}${opt.notation ? '  ·  ' + esc(opt.notation) : ''}  ·  ${esc(opt.sizeLabel || '最長辺')} ${f2(opt.edgeMM)} mm  ·  ${opt.footerNote ? esc(opt.footerNote) : opt.pageNo + ' / ' + opt.pageCount}  ·  Hyperfolder v${VERSION}</text>`);
   // 凡例
   const ly = fy - 4.4;
   const leg = [
@@ -276,7 +277,7 @@ export function toDXF(layout, dec, opt) {
 }
 
 export function toOBJ(P, name) {
-  const lines = [`# ${name} — Hyperfolder`, `o ${name.replace(/\s+/g, '_')}`];
+  const lines = [`# ${name} — Hyperfolder v${VERSION}`, `o ${name.replace(/\s+/g, '_')}`];
   for (const v of P.vertices) lines.push(`v ${v[0].toFixed(6)} ${v[1].toFixed(6)} ${v[2].toFixed(6)}`);
   for (const f of P.faces) lines.push('f ' + f.map((i) => i + 1).join(' '));
   return lines.join('\n') + '\n';
@@ -325,7 +326,7 @@ export function strutPageBody(st, opt) {
   o.push(`<text x="${x0}" y="${y}" font-size="2.8" fill="#666">長さは節点の中心どうしの距離です。部材の太さや接合金物の分を差し引いて切り出してください。</text>`);
   const fy = H - PAGE_MARGIN - 3.2;
   const bx = W - PAGE_MARGIN - 50;
-  o.push(`<g font-size="2.6" fill="#555"><text x="${PAGE_MARGIN}" y="${fy}">${esc(opt.title)}  ·  棒模型の部材表  ·  Hyperfolder</text>`);
+  o.push(`<g font-size="2.6" fill="#555"><text x="${PAGE_MARGIN}" y="${fy}">${esc(opt.title)}  ·  棒模型の部材表  ·  Hyperfolder v${VERSION}</text>`);
   o.push(`<line x1="${bx}" y1="${fy - 1}" x2="${bx + 50}" y2="${fy - 1}" stroke="#555" stroke-width="0.3"/><text x="${bx + 25}" y="${fy - 2.2}" text-anchor="middle">50 mm（印刷倍率の確認用）</text></g>`);
   o.push('</g>');
   return o.join('');
