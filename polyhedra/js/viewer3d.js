@@ -1,5 +1,6 @@
 // viewer3d.js — three.js による多面体表示（慣性回転・折りたたみアニメーション・面のハイライト）
 import * as THREE from '../vendor/three.module.min.js';
+import { L as tr } from './i18n.js';
 
 const tmpV = new THREE.Vector3();
 const tmpQ = new THREE.Quaternion();
@@ -13,7 +14,7 @@ export class Viewer3D {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     container.appendChild(this.renderer.domElement);
     this.canvas = this.renderer.domElement;
-    this.canvas.setAttribute('aria-label', '多面体の3D表示。ドラッグで回転、ホイールで拡大縮小');
+    this.canvas.setAttribute('aria-label', tr('多面体の3D表示。ドラッグで回転、ホイールで拡大縮小', '3D view of the polyhedron. Drag to rotate, scroll to zoom'));
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(32, 1, 0.05, 200);

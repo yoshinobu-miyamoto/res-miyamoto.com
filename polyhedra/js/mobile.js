@@ -3,15 +3,17 @@
 // 各ブロックを data-mtab の値でタブに振り分け、狭い画面のときだけパネルへ移す。
 // スライダーは「− 値 ＋」のステッパーに置き換える（狭い画面のときだけ表示）。
 
+import { L } from './i18n.js';
+
 const MQ = '(max-width: 920px)';
 const TAB_KEY = 'hyperfolder-mobile-tab';
 export const TABS = [
-  { id: 'shape', ja: '形', icon: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>' },
-  { id: '4d', ja: '4D', icon: '<rect x="4" y="4" width="10" height="10"/><rect x="10" y="10" width="10" height="10"/><path d="M4 4l6 6M14 4l6 6M4 14l6 6M14 14l6 6"/>' },
-  { id: 'view', ja: '表示', icon: '<circle cx="12" cy="12" r="3"/><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/>' },
-  { id: 'paper', ja: '型紙', icon: '<path d="M4 20l4-16h8l4 16z"/><path d="M8 4l4 16 4-16"/>' },
-  { id: 'export', ja: '書出', icon: '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>' },
-  { id: 'info', ja: '情報', icon: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>' },
+  { id: 'shape', ja: '形', en: 'Shape', icon: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>' },
+  { id: '4d', ja: '4D', en: '4D', icon: '<rect x="4" y="4" width="10" height="10"/><rect x="10" y="10" width="10" height="10"/><path d="M4 4l6 6M14 4l6 6M4 14l6 6M14 14l6 6"/>' },
+  { id: 'view', ja: '表示', en: 'View', icon: '<circle cx="12" cy="12" r="3"/><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/>' },
+  { id: 'paper', ja: '型紙', en: 'Paper', icon: '<path d="M4 20l4-16h8l4 16z"/><path d="M8 4l4 16 4-16"/>' },
+  { id: 'export', ja: '書出', en: 'Export', icon: '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>' },
+  { id: 'info', ja: '情報', en: 'Info', icon: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>' },
 ];
 
 export class MobileUI {
@@ -40,7 +42,7 @@ export class MobileUI {
     sheet.setAttribute('aria-label', '操作パネル');
     sheet.innerHTML = `
       <nav class="mtabs" role="tablist" aria-label="操作の種類">
-        ${TABS.map((t) => `<button type="button" role="tab" data-tab="${t.id}"><svg viewBox="0 0 24 24" aria-hidden="true">${t.icon}</svg><span>${t.ja}</span></button>`).join('')}
+        ${TABS.map((t) => `<button type="button" role="tab" data-tab="${t.id}"><svg viewBox="0 0 24 24" aria-hidden="true">${t.icon}</svg><span class="mt-l">${L(t.ja, t.en)}</span></button>`).join('')}
         <button type="button" class="msheet-size" id="msheet-size" aria-label="パネルを広げる" title="パネルを広げる／縮める">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
         </button>
@@ -53,10 +55,19 @@ export class MobileUI {
       b.addEventListener('click', () => this.setTab(b.dataset.tab));
     }
     sheet.querySelector('#msheet-size').addEventListener('click', () => {
-      const tall = document.body.classList.toggle('msheet-tall');
-      const btn = sheet.querySelector('#msheet-size');
-      btn.setAttribute('aria-label', tall ? 'パネルを縮める' : 'パネルを広げる');
+      document.body.classList.toggle('msheet-tall');
+      this.relabel();
     });
+  }
+
+  // 言語を切り替えたときの表示
+  relabel() {
+    for (const b of this.sheet.querySelectorAll('[data-tab]')) {
+      const t = TABS.find((x) => x.id === b.dataset.tab);
+      b.querySelector('.mt-l').textContent = L(t.ja, t.en);
+    }
+    const tall = document.body.classList.contains('msheet-tall');
+    this.sheet.querySelector('#msheet-size').setAttribute('aria-label', tall ? L('パネルを縮める', 'Shrink panel') : L('パネルを広げる', 'Enlarge panel'));
   }
 
   get mobile() { return this.mq.matches; }

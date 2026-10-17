@@ -7,22 +7,23 @@ import { convexHull, normalize } from './geom.js';
 import { analyze, PALETTES } from './analysis.js';
 import { unfoldBest, unfoldSymmetric, decorate } from './unfold.js';
 import { printableArea } from './netview.js';
+import { L as tr } from './i18n.js';
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 export const PROJECTIONS = {
-  schlegel: { ja: 'シュレーゲル図（胞を手前に・透視）' },
-  'persp-vertex': { ja: '透視投影（頂点を手前に）' },
-  'ortho-cell': { ja: '平行投影（胞を手前に）' },
-  'ortho-vertex': { ja: '平行投影（頂点を手前に）' },
+  schlegel: { ja: 'シュレーゲル図（胞を手前に・透視）', en: 'Schlegel diagram (cell first, perspective)' },
+  'persp-vertex': { ja: '透視投影（頂点を手前に）', en: 'Perspective (vertex first)' },
+  'ortho-cell': { ja: '平行投影（胞を手前に）', en: 'Parallel (cell first)' },
+  'ortho-vertex': { ja: '平行投影（頂点を手前に）', en: 'Parallel (vertex first)' },
 };
 
 export const MODELS = {
-  puzzle: { ja: '投影した胞（立体パズル）' },
-  hull: { ja: '投影の外形' },
-  cells: { ja: '胞の実形' },
-  struts: { ja: '棒模型の部材表' },
+  puzzle: { ja: '投影した胞（立体パズル）', en: 'Projected cells (3D puzzle)' },
+  hull: { ja: '投影の外形', en: 'Projection hull' },
+  cells: { ja: '胞の実形', en: 'True cells' },
+  struts: { ja: '棒模型の部材表', en: 'Strut list' },
 };
 
 // 平面 (a, b) 内で a を b へ向けて ang だけ回す回転
@@ -240,7 +241,7 @@ export class Mode4D {
     let model = this.opts.model;
     let warn = '';
     if (model === 'puzzle' && this.opts.projection !== 'schlegel') {
-      warn = '立体パズルはシュレーゲル図のときに作れます。胞の実形を表示しています';
+      warn = tr('立体パズルはシュレーゲル図のときに作れます。胞の実形を表示しています', 'The 3D puzzle needs the Schlegel diagram; showing the true cells instead');
       model = 'cells';
     }
     const area = printableArea(opt.paper, opt.landscape);
@@ -260,7 +261,7 @@ export class Mode4D {
     } else if (model === 'hull') {
       const H = convexHull(proj, 1e-7);
       scale = opt.sizeMM / diam;
-      groups.push({ P: H, count: 1, color: this.typeColor(0), name: '投影の外形' });
+      groups.push({ P: H, count: 1, color: this.typeColor(0), name: tr('投影の外形', 'Projection hull') });
     } else if (model === 'puzzle') {
       const cellsP = [];
       let emax = 0;
@@ -277,7 +278,7 @@ export class Mode4D {
       for (const c of cellsP) {
         const g = bySig.get(c.sig);
         if (g) g.count++;
-        else bySig.set(c.sig, { P: c.H, count: 1, color: this.typeColor(c.type), name: T.types[c.type].name + '（投影）', vol: Math.abs(volume3(c.H)) });
+        else bySig.set(c.sig, { P: c.H, count: 1, color: this.typeColor(c.type), name: T.types[c.type].name + tr('（投影）', ' (projected)'), vol: Math.abs(volume3(c.H)) });
       }
       groups.push(...[...bySig.values()].sort((a, b) => b.vol - a.vol));
     } else {
@@ -340,17 +341,17 @@ export class Mode4D {
     const dh = T.dihedrals.slice(0, 8).map((d) => `<span>${d.deg.toFixed(2)}° ×${d.count}</span>`).join('');
     return `
       <div class="info-grid five">
-        <div><b>${T.V.length}</b><span>頂点</span></div>
-        <div><b>${T.edges.length}</b><span>辺</span></div>
-        <div><b>${T.faces2.length}</b><span>面</span></div>
-        <div><b>${T.cells.length}</b><span>胞</span></div>
+        <div><b>${T.V.length}</b><span>${tr('頂点', 'vertices')}</span></div>
+        <div><b>${T.edges.length}</b><span>${tr('辺', 'edges')}</span></div>
+        <div><b>${T.faces2.length}</b><span>${tr('面', 'faces')}</span></div>
+        <div><b>${T.cells.length}</b><span>${tr('胞', 'cells')}</span></div>
         <div><b>${T.euler}</b><span>χ</span></div>
       </div>
-      <p class="info-h">胞の種類</p>
+      <p class="info-h">${tr('胞の種類', 'Cell types')}</p>
       <ul class="legend">${legend}</ul>
-      <p class="info-h">胞どうしの角（胞二面角）</p>
+      <p class="info-h">${tr('胞どうしの角（胞二面角）', 'Dihedral angles between cells')}</p>
       <div class="tags">${dh}</div>
-      <p class="info-h">シュレーフリ記号</p>
+      <p class="info-h">${tr('シュレーフリ記号', 'Schläfli symbol')}</p>
       <div class="tags"><span>${this.item.schlafli || '—'}</span></div>`;
   }
 }

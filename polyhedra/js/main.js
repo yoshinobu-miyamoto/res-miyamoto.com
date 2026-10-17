@@ -10,6 +10,7 @@ import { Mode4D, PROJECTIONS, MODELS } from './mode4d.js';
 import { Demo } from './demo.js';
 import { MobileUI } from './mobile.js';
 import { VERSION } from './version.js';
+import { L, isEn, onLang, setLang, applyStatic } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (x, d = 1) => (Number.isFinite(x) ? x.toFixed(d) : '—');
@@ -53,7 +54,7 @@ function initControls() {
   for (const [k, op] of Object.entries(OPERATORS)) {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'chip'; b.textContent = k;
-    b.title = `${op.ja}（${op.en}）— 現在の形に適用`;
+    b.dataset.op = k;
     b.addEventListener('click', () => {
       const base = state.notation || 'C';
       const inp = $('notation-input');
@@ -66,7 +67,7 @@ function initControls() {
   for (const [k, sd] of Object.entries(SEEDS)) {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'chip'; b.textContent = sd.n ? k + 'n' : k;
-    b.title = sd.ja + (sd.n ? '（例: ' + k + '6）' : '');
+    b.dataset.seed = k;
     b.addEventListener('click', () => {
       const inp = $('notation-input');
       const ops = (inp.value.match(/^[a-z]*/) || [''])[0];
@@ -75,11 +76,12 @@ function initControls() {
     });
     seedBox.appendChild(b);
   }
+  titleChips();
   $('notation-form').addEventListener('submit', (e) => { e.preventDefault(); loadNotation($('notation-input').value); });
 
   // パレット・用紙
-  for (const [k, p] of Object.entries(PALETTES)) $('palette').add(new Option(p.ja, k));
-  for (const [k, p] of Object.entries(PAPERS)) $('paper').add(new Option(p.ja, k));
+  for (const [k, p] of Object.entries(PALETTES)) $('palette').add(new Option(L(p.ja, p.en), k));
+  for (const [k, p] of Object.entries(PAPERS)) $('paper').add(new Option(L(p.ja, p.en || p.ja), k));
 
   // 値の反映
   const bind = (id, key, { type = 'value', onChange, fmtOut } = {}) => {
@@ -136,8 +138,8 @@ function initControls() {
   bind('canonical', 'canonical', { type: 'checked', onChange: () => { if (state.current?.notation) loadNotation(state.current.notation); } });
 
   // 四次元
-  for (const [k, p] of Object.entries(PROJECTIONS)) $('proj4').add(new Option(p.ja, k));
-  for (const [k, p] of Object.entries(MODELS)) $('model4').add(new Option(p.ja, k));
+  for (const [k, p] of Object.entries(PROJECTIONS)) $('proj4').add(new Option(L(p.ja, p.en), k));
+  for (const [k, p] of Object.entries(MODELS)) $('model4').add(new Option(L(p.ja, p.en), k));
   const remodel = debounce(() => { if (is4D()) computeNet(); }, 250);
   bind('proj4', 'proj4', { onChange: (v) => { m4.setOptions({ projection: v }); sync4Rows(); remodel(); } });
   bind('dist4', 'dist4', { onChange: (v) => { m4.setOptions({ dist: v }); remodel(); }, fmtOut: (v) => Math.round(v * 100) + '%' });
@@ -233,6 +235,49 @@ function initControls() {
   window.addEventListener('hashchange', () => { if (location.hash === '#demo') startDemo(); else loadFromHash(); });
 }
 
+// 演算子・種のチップの説明
+function titleChips() {
+  for (const b of document.querySelectorAll('#op-chips [data-op]')) {
+    const op = OPERATORS[b.dataset.op];
+    b.title = L(`${op.ja}（${op.en}）— 現在の形に適用`, `${op.en} — apply to the current shape`);
+  }
+  for (const b of document.querySelectorAll('#seed-chips [data-seed]')) {
+    const k = b.dataset.seed, sd = SEEDS[k];
+    b.title = L(sd.ja + (sd.n ? '（例: ' + k + '6）' : ''), sd.en[0].toUpperCase() + sd.en.slice(1) + (sd.n ? ` (e.g. ${k}6)` : ''));
+  }
+}
+
+// 選択肢の文言を言語に合わせる
+function relabelOptions() {
+  const set = (id, table) => { for (const o of $(id).options) { const p = table[o.value]; if (p) o.text = L(p.ja, p.en || p.ja); } };
+  set('palette', PALETTES); set('paper', PAPERS); set('proj4', PROJECTIONS); set('model4', MODELS);
+}
+
+// 言語の切り替え
+function syncLangUI() {
+  const b = $('btn-lang');
+  b.innerHTML = isEn() ? '<span class="l-full">日本語</span><span class="l-short">JA</span>' : 'EN';
+  b.lang = isEn() ? 'ja' : 'en';
+  b.title = isEn() ? '日本語表示に切り替え' : 'Switch to English';
+  const sfx = isEn() ? '.en.html' : '.html';
+  $('ver-chip').href = 'about' + sfx + '#history';
+  for (const a of document.querySelectorAll('a[data-doc]')) a.href = a.dataset.doc + sfx;
+  viewer.canvas?.setAttribute('aria-label', L('多面体の3D表示。ドラッグで回転、ホイールで拡大縮小', '3D view of the polyhedron. Drag to rotate, scroll to zoom'));
+}
+function relabelAll() {
+  syncLangUI();
+  titleChips(); relabelOptions();
+  renderLibrary($('search').value);
+  paramLabel(); foldLabel(); syncModeInputs(); frontOptions();
+  $('btn-demo').querySelector('span').textContent = demo.running ? L('終了', 'Stop') : L('デモ', 'Demo');
+  demo.caption();
+  mobileUI?.relabel();
+  if (state.title) renderTitle();
+  const msg = $('notation-msg');
+  if (state.current?.notation && !msg.classList.contains('err')) msg.textContent = L(describeNotationJa(state.current.notation), describeNotation(state.current.notation));
+  if (is4D()) computeNet(); else if (state.an) { renderNet(); renderInfo(); }
+}
+
 function setView(v) {
   settings.view = v; save();
   $('stage').dataset.view = v;
@@ -255,10 +300,10 @@ function renderLibrary(q = '') {
     det.open = !!query || (wide && ci < 3) || cat.items.some((it) => it === state.current?.item);
     // 閉じているときは中身を一行で予告する（先頭の数件と残りの件数、選択中の項目）
     const cur = items.find((it) => it === state.current?.item);
-    const head = items.slice(0, 3).map((it) => it.ja).join('・');
-    const rest = items.length > 3 ? ` ほか ${items.length - 3}` : '';
-    const peek = cur ? `<span class="cur">選択中: ${cur.ja}</span>` : `${head}${rest}`;
-    det.innerHTML = `<summary><span class="mk" aria-hidden="true"></span><span class="ttl">${cat.ja}<span class="en">${cat.en}</span></span><span class="n" title="${items.length} 項目">${items.length}</span><span class="peek">${peek}</span></summary>`;
+    const head = items.slice(0, 3).map((it) => L(it.ja, it.en)).join(L('・', ', '));
+    const rest = items.length > 3 ? L(` ほか ${items.length - 3}`, ` + ${items.length - 3} more`) : '';
+    const peek = cur ? curPeek(cur) : `${head}${rest}`;
+    det.innerHTML = `<summary><span class="mk" aria-hidden="true"></span><span class="ttl">${L(cat.ja, cat.en)}<span class="en">${L(cat.en, cat.ja)}</span></span><span class="n" title="${items.length}${L(' 項目', ' items')}">${items.length}</span><span class="peek">${peek}</span></summary>`;
     const ul = document.createElement('ul');
     ul.className = 'lib-items';
     for (const it of items) {
@@ -268,7 +313,7 @@ function renderLibrary(q = '') {
       b.dataset.id = it.id;
       if (state.current?.item === it) b.setAttribute('aria-current', 'true');
       const nt = it.dim ? (it.schlafli || '') : it.notation || (it.param ? it.id + (it.param === 'f' ? '·f' : '·n') : it.id);
-      b.innerHTML = `<span class="ja">${it.ja}</span><span class="en">${it.en}</span><span class="nt">${nt}</span>`;
+      b.innerHTML = `<span class="ja">${L(it.ja, it.en)}</span><span class="en">${L(it.en, it.ja)}</span><span class="nt">${nt}</span>`;
       b.addEventListener('click', () => loadItem(it));
       li.appendChild(b);
       ul.appendChild(li);
@@ -278,6 +323,8 @@ function renderLibrary(q = '') {
   });
 }
 
+const curPeek = (it) => `<span class="cur">${L('選択中: ', 'Selected: ')}${L(it.ja, it.en)}</span>`;
+
 function markCurrent() {
   // 閉じたカテゴリの予告行にも選択中の項目を出す
   for (const det of document.querySelectorAll('.lib-cat')) {
@@ -286,7 +333,7 @@ function markCurrent() {
     if (!peek) continue;
     if (!peek.dataset.base) peek.dataset.base = peek.querySelector('.cur') ? '' : peek.innerHTML;
     if (b) {
-      peek.innerHTML = `<span class="cur">選択中: ${state.current.item.ja}</span>`;
+      peek.innerHTML = curPeek(state.current.item);
       // 選択中の項目を含むカテゴリは開いておく
       if (!det.open && !det.dataset.autoOpened) { det.open = true; det.dataset.autoOpened = '1'; }
     }
@@ -307,17 +354,29 @@ function loadItem(item, param) {
     if (param === undefined) param = state.current?.item === item ? state.current.param : item.def;
     param = Math.max(min, Math.min(max, param));
     $('param-block').hidden = false;
-    $('param-label').textContent = item.param === 'f' ? '分割数' : 'n（辺数）';
     $('param').min = min; $('param').max = max; $('param').value = param;
     $('param-out').textContent = param;
   } else {
     $('param-block').hidden = true;
   }
   state.current = { item, param };
+  paramLabel();
   const name = item.param ? item.ja.replace('n', param).replace('nV', param + 'V') : item.ja;
   const notation = item.notation || (item.id === 'P' || item.id === 'A' || item.id === 'Y' || item.id === 'dA' ? item.id + param : '');
-  build(() => item.build(param), name, item.en, notation, item.param ? item.id + param : item.id);
+  build(() => item.build(param), name, enName(item, param), notation, item.param ? item.id + param : item.id);
   markCurrent();
+}
+
+// 英語名（n や分割数を入れる）
+const GONAL = { 3: 'Triangular', 4: 'Square', 5: 'Pentagonal', 6: 'Hexagonal', 7: 'Heptagonal', 8: 'Octagonal', 9: 'Enneagonal', 10: 'Decagonal', 12: 'Dodecagonal' };
+function enName(item, param) {
+  if (!item.param) return item.en;
+  if (item.param === 'f') return `${item.en} ${param}V`;
+  return `${GONAL[param] || param + '-gonal'} ${item.en.toLowerCase()}`;
+}
+function paramLabel() {
+  const it = state.current?.item;
+  $('param-label').textContent = it?.param === 'f' ? L('分割数', 'Frequency') : L('n（辺数）', 'n (sides)');
 }
 
 function loadNotation(text) {
@@ -332,7 +391,7 @@ function loadNotation(text) {
   $('param-block').hidden = true;
   $('notation-input').value = s;
   build(() => fromNotation(s, { canonical: settings.canonical }), named ? named.ja : 'コンウェイ多面体', named ? named.en : describeNotation(s), s, s);
-  msg.textContent = describeNotationJa(s);
+  msg.textContent = L(describeNotationJa(s), describeNotation(s));
   markCurrent();
 }
 
@@ -360,12 +419,10 @@ function build(fn, name, en, notation, hash) {
       state.title = name; state.titleEn = en; state.notation = notation;
       state.variant = 0;
       state.dispVariant = 0;
-      $('poly-name').textContent = name;
-      $('poly-en').textContent = en;
+      renderTitle();
       $('poly-notation').textContent = notation;
       $('poly-counts').textContent = `V ${state.an.V} · E ${state.an.E} · F ${state.an.F}`;
       if (notation) $('notation-input').value = notation;
-      document.title = `${name} — Hyperfolder`;
       // デモ中は #demo のままにする（再読み込みしてもデモが続くように）
       if (hash && location.hash.slice(1) !== hash && !keepDemoHash()) history.replaceState(null, '', '#' + hash);
       updateColors(false);
@@ -374,11 +431,19 @@ function build(fn, name, en, notation, hash) {
     } catch (e) {
       console.error(e);
       const msg = $('notation-msg');
-      msg.textContent = '形をつくれませんでした: ' + e.message;
+      msg.textContent = L('形をつくれませんでした: ', 'Could not build the shape: ') + e.message;
       msg.classList.add('err');
     }
     showBusy(false);
   }, 16);
+}
+
+// 名称の表示（英語表示では英語名を主に）
+const titleText = () => L(state.title, state.titleEn || state.title);
+function renderTitle() {
+  $('poly-name').textContent = titleText();
+  $('poly-en').textContent = L(state.titleEn, state.title);
+  document.title = `${titleText()} — Hyperfolder`;
 }
 
 function updateColors(apply = true) {
@@ -390,7 +455,7 @@ function updateColors(apply = true) {
 function netOpts() {
   return {
     colors: state.colors, colorFaces: settings.colorNet, labels: settings.labels,
-    title: state.title, notation: state.notation, edgeMM: settings[sizeKey()], sizeLabel: sizeLabel(),
+    title: titleText(), notation: state.notation, edgeMM: settings[sizeKey()], sizeLabel: sizeLabel(),
     paper: settings.paper, landscape: settings.orient === 'l',
   };
 }
@@ -433,10 +498,10 @@ function computeNet(newModel = false) {
 
 function symText(sym) {
   if (!sym) return '—';
-  if (sym.rot > 1 && sym.mirror) return `${sym.rot}回回転対称＋鏡映`;
-  if (sym.rot > 1) return `${sym.rot}回回転対称`;
-  if (sym.mirror) return '鏡映対称';
-  return '非対称';
+  if (sym.rot > 1 && sym.mirror) return L(`${sym.rot}回回転対称＋鏡映`, `${sym.rot}-fold rotation + mirror`);
+  if (sym.rot > 1) return L(`${sym.rot}回回転対称`, `${sym.rot}-fold rotation`);
+  if (sym.mirror) return L('鏡映対称', 'Mirror');
+  return L('非対称', 'None');
 }
 
 function syncNetView() {
@@ -457,19 +522,20 @@ function renderBoard() {
   const symAll = is4D() ? null : state.disp?.symmetry;
   box.innerHTML = `
     <div class="net-sheet">
-      <div class="sheet-head"><span>画面表示 · 対称性を優先 · ${fmt(board.usedW, 0)}×${fmt(board.usedH, 0)} mm</span>
-      <button type="button" data-goto-print>印刷レイアウトを見る</button></div>
-      ${pageSVG(board.pages[0], dec, board, { ...opt, board: board.board, interactive: true, footerNote: '画面表示（対称性優先）。印刷は面積効率を優先した割付になります' })}
+      <div class="sheet-head"><span>${L('画面表示 · 対称性を優先', 'Screen · symmetry first')} · ${fmt(board.usedW, 0)}×${fmt(board.usedH, 0)} mm</span>
+      <button type="button" data-goto-print>${L('印刷レイアウトを見る', 'See the print layout')}</button></div>
+      ${pageSVG(board.pages[0], dec, board, { ...opt, board: board.board, interactive: true, footerNote: L('画面表示（対称性優先）。印刷は面積効率を優先した割付になります', 'Screen view (symmetry first). Printing uses a layout that saves paper') })}
     </div>`;
   box.querySelector('[data-goto-print]').addEventListener('click', () => { settings.netView = 'print'; save(); syncNetView(); renderNet(); });
   const pages = state.layout ? state.layout.pages.filter((p) => !p.svgBody).length : 0;
-  const effTxt = state.efficiency ? `（用紙の使用率 ${Math.round(state.efficiency * 100)}%）` : '';
+  const effTxt = state.efficiency ? L(`（用紙の使用率 ${Math.round(state.efficiency * 100)}%）`, ` (paper use ${Math.round(state.efficiency * 100)}%)`) : '';
   if (is4D()) {
     const res = state.model4;
     const syms = res && res.groups ? res.groups.map((g) => `${g.label} ${symText(g.symmetry)}`).join(' · ') : '';
-    $('net-summary').innerHTML = `画面表示 · ${syms}` + (res && res.warn ? ` · <span class="warn">${res.warn}</span>` : '');
+    $('net-summary').innerHTML = `${L('画面表示', 'Screen')} · ${syms}` + (res && res.warn ? ` · <span class="warn">${res.warn}</span>` : '');
   } else {
-    $('net-summary').innerHTML = `対称性 <b>${symText(symAll)}</b> · <b>${dec.length}</b> ピース · 印刷は ${pages} ページ${effTxt}`;
+    $('net-summary').innerHTML = L(`対称性 <b>${symText(symAll)}</b> · <b>${dec.length}</b> ピース · 印刷は ${pages} ページ${effTxt}`,
+      `Symmetry <b>${symText(symAll)}</b> · <b>${dec.length}</b> ${dec.length === 1 ? 'piece' : 'pieces'} · prints on ${pages} ${pages === 1 ? 'page' : 'pages'}${effTxt}`);
   }
   return true;
 }
@@ -489,8 +555,8 @@ function renderNet() {
   box.style.width = width + 'px';
   box.innerHTML = pages.map((pg, i) => `
     <div class="net-sheet">
-      <div class="sheet-head"><span>${i + 1} / ${pages.length} · ${PAPERS[settings.paper].ja}${settings.orient === 'l' ? '横' : '縦'} ${W}×${H} mm</span>
-      <button type="button" data-svg-page="${i}">このページを SVG で保存</button></div>
+      <div class="sheet-head"><span>${i + 1} / ${pages.length} · ${paperName()} ${W}×${H} mm</span>
+      <button type="button" data-svg-page="${i}">${L('このページを SVG で保存', 'Save this page as SVG')}</button></div>
       ${pageSVG(pg, state.dec, state.layout, { ...opt, pageNo: i + 1, pageCount: pages.length, interactive: true })}
     </div>`).join('');
   for (const b of box.querySelectorAll('[data-svg-page]')) {
@@ -506,10 +572,14 @@ function renderNet() {
   const tabs = state.dec.reduce((s, p) => s + p.tabs.length, 0);
   const cuts = state.dec.reduce((s, p) => s + p.labels.length, 0) / 2;
   const missing = settings.tabMode === 'none' ? 0 : cuts - tabs;
-  $('net-summary').innerHTML = `印刷 · <b>${pieces}</b> ピース · <b>${pages.length}</b> ページ · 用紙の使用率 <b>${Math.round((state.efficiency || 0) * 100)}%</b> · のりしろ ${tabs}` +
-    (missing > 0 ? ` · <span class="warn" title="切れ込みが狭く、のりしろが入らない辺です。テープで留めるか「別の展開」を試してください">のりしろなしの辺 ${missing}</span>` : '') +
-    (over ? ' · <span class="warn">用紙からはみ出す部分があります。最長辺を小さくしてください</span>' : '');
+  const eff = Math.round((state.efficiency || 0) * 100);
+  $('net-summary').innerHTML = L(`印刷 · <b>${pieces}</b> ピース · <b>${pages.length}</b> ページ · 用紙の使用率 <b>${eff}%</b> · のりしろ ${tabs}`,
+    `Print · <b>${pieces}</b> ${pieces === 1 ? 'piece' : 'pieces'} · <b>${pages.length}</b> ${pages.length === 1 ? 'page' : 'pages'} · paper use <b>${eff}%</b> · ${tabs} tabs`) +
+    (missing > 0 ? ` · <span class="warn" title="${L('切れ込みが狭く、のりしろが入らない辺です。テープで留めるか「別の展開」を試してください', 'These cuts are too tight for a tab. Use tape, or try Another net')}">${L('のりしろなしの辺', 'Edges without tabs:')} ${missing}</span>` : '') +
+    (over ? ` · <span class="warn">${L('用紙からはみ出す部分があります。最長辺を小さくしてください', 'Some parts do not fit on the paper. Make the longest edge shorter')}</span>` : '');
 }
+
+const paperName = () => L(PAPERS[settings.paper].ja + (settings.orient === 'l' ? '横' : '縦'), (PAPERS[settings.paper].en || PAPERS[settings.paper].ja) + (settings.orient === 'l' ? ' landscape' : ' portrait'));
 
 function setNetZoom(z) { state.netZoom = Math.max(0.4, Math.min(4, z)); renderNet(); }
 
@@ -536,7 +606,7 @@ function hoverFace(f, from) {
     const e = an.edgeIndex.map.get(an.edgeIndex.key(v, face[(k + 1) % face.length]));
     return (e.length * scale).toFixed(1);
   }))];
-  info.innerHTML = `<b>面 ${f + 1}</b> · ${cls.name} · 辺 ${lens.join(' / ')} mm · 面積 ${(an.areas[f] * scale * scale / 100).toFixed(2)} cm²`;
+  info.innerHTML = `<b>${L('面', 'Face')} ${f + 1}</b> · ${cls.name} · ${L('辺', 'edges')} ${lens.join(' / ')} mm · ${L('面積', 'area')} ${(an.areas[f] * scale * scale / 100).toFixed(2)} cm²`;
   info.hidden = false;
 }
 
@@ -590,29 +660,29 @@ function renderInfo() {
   if (!an) return;
   const scale = settings.edgeMM / an.emax;
   const legend = an.classes.map((c, i) => `<li><span class="sw" style="background:${classColor(an, i, settings.palette, settings.colorMode)}"></span><span>${c.name}</span><span class="ct">× ${c.count}</span></li>`).join('');
-  const vc = an.vertexConfigs.slice(0, 8).map((v) => `<span title="${v.count} 頂点">${v.config}${an.vertexConfigs.length > 1 ? ' ×' + v.count : ''}</span>`).join('');
-  const dh = an.dihedrals.slice(0, 8).map((d) => `<span title="${d.convex ? '凸（山折り）' : '凹（谷折り）'}">${d.deg.toFixed(2)}°${d.convex ? '' : ' 凹'} ×${d.count}</span>`).join('');
+  const vc = an.vertexConfigs.slice(0, 8).map((v) => `<span title="${v.count}${L(' 頂点', ' vertices')}">${v.config}${an.vertexConfigs.length > 1 ? ' ×' + v.count : ''}</span>`).join('');
+  const dh = an.dihedrals.slice(0, 8).map((d) => `<span title="${d.convex ? L('凸（山折り）', 'Convex (mountain fold)') : L('凹（谷折り）', 'Concave (valley fold)')}">${d.deg.toFixed(2)}°${d.convex ? '' : L(' 凹', ' concave')} ×${d.count}</span>`).join('');
   const pages = state.layout ? state.layout.pages.length : 0;
   $('info').innerHTML = `
     <div class="info-grid">
-      <div><b>${an.V}</b><span>頂点</span></div>
-      <div><b>${an.E}</b><span>辺</span></div>
-      <div><b>${an.F}</b><span>面</span></div>
-      <div><b>${an.chi}</b><span>オイラー標数</span></div>
+      <div><b>${an.V}</b><span>${L('頂点', 'vertices')}</span></div>
+      <div><b>${an.E}</b><span>${L('辺', 'edges')}</span></div>
+      <div><b>${an.F}</b><span>${L('面', 'faces')}</span></div>
+      <div><b>${an.chi}</b><span>${L('オイラー標数', 'Euler χ')}</span></div>
     </div>
-    <p class="info-h">面の種類</p>
+    <p class="info-h">${L('面の種類', 'Face types')}</p>
     <ul class="legend">${legend}</ul>
-    ${vc ? `<p class="info-h">頂点配置</p><div class="tags">${vc}</div>` : ''}
-    ${dh ? `<p class="info-h">二面角</p><div class="tags">${dh}${an.dihedrals.length > 8 ? '<span>…</span>' : ''}</div>` : ''}
-    <p class="info-h">型紙で組んだときの大きさ</p>
+    ${vc ? `<p class="info-h">${L('頂点配置', 'Vertex configurations')}</p><div class="tags">${vc}</div>` : ''}
+    ${dh ? `<p class="info-h">${L('二面角', 'Dihedral angles')}</p><div class="tags">${dh}${an.dihedrals.length > 8 ? '<span>…</span>' : ''}</div>` : ''}
+    <p class="info-h">${L('型紙で組んだときの大きさ', 'Size of the paper model')}</p>
     <dl class="kv">
-      <dt>最長辺 / 最短辺</dt><dd>${fmt(an.emax * scale)} / ${fmt(an.emin * scale)} mm</dd>
-      <dt>外接球の直径</dt><dd>${fmt(an.radius * 2 * scale)} mm</dd>
-      <dt>表面積</dt><dd>${fmt(an.area * scale * scale / 100)} cm²</dd>
-      ${an.volume ? `<dt>体積</dt><dd>${fmt(Math.abs(an.volume) * scale ** 3 / 1000)} cm³</dd>` : ''}
-      <dt>用紙</dt><dd>${PAPERS[settings.paper].ja} × ${pages} 枚</dd>
+      <dt>${L('最長辺 / 最短辺', 'Longest / shortest edge')}</dt><dd>${fmt(an.emax * scale)} / ${fmt(an.emin * scale)} mm</dd>
+      <dt>${L('外接球の直径', 'Circumsphere diameter')}</dt><dd>${fmt(an.radius * 2 * scale)} mm</dd>
+      <dt>${L('表面積', 'Surface area')}</dt><dd>${fmt(an.area * scale * scale / 100)} cm²</dd>
+      ${an.volume ? `<dt>${L('体積', 'Volume')}</dt><dd>${fmt(Math.abs(an.volume) * scale ** 3 / 1000)} cm³</dd>` : ''}
+      <dt>${L('用紙', 'Paper')}</dt><dd>${L(PAPERS[settings.paper].ja, PAPERS[settings.paper].en || PAPERS[settings.paper].ja)} × ${pages}${L(' 枚', pages === 1 ? ' sheet' : ' sheets')}</dd>
     </dl>`;
-  $('size-hint').textContent = `組み上がりの直径 約 ${fmt(an.radius * 2 * scale, 0)} mm`;
+  $('size-hint').textContent = L(`組み上がりの直径 約 ${fmt(an.radius * 2 * scale, 0)} mm`, `Assembled diameter about ${fmt(an.radius * 2 * scale, 0)} mm`);
 }
 
 // ---------- 書き出し ----------
@@ -683,8 +753,8 @@ function sizeKey() {
   return settings.model4 === 'cells' ? 'size4C' : 'size4D';
 }
 function sizeLabel() {
-  if (!is4D()) return '最長辺';
-  return settings.model4 === 'cells' ? '辺の長さ' : '外形の直径';
+  if (!is4D()) return L('最長辺', 'Longest edge');
+  return settings.model4 === 'cells' ? L('辺の長さ', 'Edge length') : L('外形の直径', 'Overall diameter');
 }
 function syncModeInputs() {
   $('edge-mm-label').textContent = sizeLabel();
@@ -715,7 +785,7 @@ function leave4D() {
   $('spin4').checked = false;
   $('block-4d').hidden = true;
   $('notation-form').closest('.block').hidden = false;
-  document.querySelector('label[for="fold"]').textContent = '展開';
+  foldLabel();
   stopFoldAnim(); setFold(0);
   syncModeInputs();
   state.display();
@@ -727,7 +797,6 @@ function load4D(item, param) {
     if (param === undefined) param = state.current?.item === item ? state.current.param : item.def;
     param = Math.max(min, Math.min(max, param));
     $('param-block').hidden = false;
-    $('param-label').textContent = 'n（辺数）';
     $('param').min = min; $('param').max = max; $('param').value = param;
     $('param-out').textContent = param;
   } else {
@@ -739,9 +808,10 @@ function load4D(item, param) {
   viewer.fitAll = true;
   mobileUI?.set4D(true);
   state.current = { item, param };
+  paramLabel();
   state.P = null; state.an = null;
   $('block-4d').hidden = false;
-  document.querySelector('label[for="fold"]').textContent = '3D展開';
+  foldLabel();
   syncModeInputs(); sync4Rows();
   markCurrent();
   showBusy(true);
@@ -760,26 +830,30 @@ function load4D(item, param) {
       const name = item.param ? item.ja.replaceAll('n', param) : item.ja;
       const en = item.param ? item.en.replaceAll('n', param) : item.en;
       state.title = name; state.titleEn = en; state.notation = item.schlafli ? item.schlafli.replaceAll('n', param) : '';
-      $('poly-name').textContent = name;
-      $('poly-en').textContent = en;
+      renderTitle();
       $('poly-notation').textContent = state.notation;
       const T = m4.T;
       $('poly-counts').textContent = `V ${T.V.length} · E ${T.edges.length} · F ${T.faces2.length} · C ${T.cells.length}`;
-      document.title = `${name} — Hyperfolder`;
       const hash = item.param ? item.id + 'n' + param : item.id;
       if (location.hash.slice(1) !== hash && !keepDemoHash()) history.replaceState(null, '', '#' + hash);
       // 手前に置く胞の選択肢
-      const sel = $('front4');
-      sel.innerHTML = '';
-      T.types.forEach((t, i) => sel.add(new Option(`${t.name}（${t.count}）`, i)));
-      sel.value = m4.opts.frontType;
+      frontOptions();
       computeNet4();
     } catch (e) {
       console.error(e);
-      $('net-summary').textContent = 'つくれませんでした: ' + e.message;
+      $('net-summary').textContent = L('つくれませんでした: ', 'Could not build: ') + e.message;
     }
     showBusy(false);
   }, 16);
+}
+
+function foldLabel() { document.querySelector('label[for="fold"]').textContent = is4D() ? L('3D展開', '3D net') : L('展開', 'Unfold'); }
+function frontOptions() {
+  if (!m4.T) return;
+  const sel = $('front4');
+  sel.innerHTML = '';
+  m4.T.types.forEach((t, i) => sel.add(new Option(`${t.name}${L('（', ' (')}${t.count}${L('）', ')')}`, i)));
+  sel.value = m4.opts.frontType;
 }
 
 function computeNet4() {
@@ -792,8 +866,9 @@ function computeNet4() {
   state.model4 = res;
   if (res.strut) {
     const body = strutPageBody(res.strut, {
-      ...opt, title: state.title,
-      subtitle: `${PROJECTIONS[settings.proj4].ja} · 4次元回転 0° の標準投影 · 外形の直径 ${settings.size4D} mm`,
+      ...opt, title: titleText(),
+      subtitle: L(`${PROJECTIONS[settings.proj4].ja} · 4次元回転 0° の標準投影 · 外形の直径 ${settings.size4D} mm`,
+        `${PROJECTIONS[settings.proj4].en} · standard projection at 4D rotation 0° · overall diameter ${settings.size4D} mm`),
     });
     state.dec = [];
     state.layout = { pages: [{ items: [], svgBody: body }] };
@@ -813,13 +888,16 @@ function summary4(pages) {
   if (!res) return;
   const warn = res.warn ? ` · <span class="warn">${res.warn}</span>` : '';
   if (res.strut) {
-    $('net-summary').innerHTML = `部材 <b>${res.strut.rows.length}</b> 種類 · <b>${res.strut.edges}</b> 本 · 節点 ${res.strut.V}` + warn;
+    $('net-summary').innerHTML = L(`部材 <b>${res.strut.rows.length}</b> 種類 · <b>${res.strut.edges}</b> 本 · 節点 ${res.strut.V}`,
+      `<b>${res.strut.rows.length}</b> strut lengths · <b>${res.strut.edges}</b> struts · ${res.strut.V} nodes`) + warn;
     return;
   }
   const over = pages.some((p) => p.items.some((it) => it.oversize));
   const parts = res.groups.reduce((s, g) => s + g.count, 0);
-  $('net-summary').innerHTML = `印刷 · 型紙 <b>${res.groups.length}</b> 種類 · 部品 <b>${parts}</b> 個 · <b>${pages.length}</b> ページ · 用紙の使用率 <b>${Math.round((state.efficiency || 0) * 100)}%</b>` + warn +
-    (over ? ' · <span class="warn">用紙からはみ出す部分があります。大きさを小さくしてください</span>' : '');
+  const eff = Math.round((state.efficiency || 0) * 100);
+  $('net-summary').innerHTML = L(`印刷 · 型紙 <b>${res.groups.length}</b> 種類 · 部品 <b>${parts}</b> 個 · <b>${pages.length}</b> ページ · 用紙の使用率 <b>${eff}%</b>`,
+    `Print · <b>${res.groups.length}</b> net types · <b>${parts}</b> parts · <b>${pages.length}</b> ${pages.length === 1 ? 'page' : 'pages'} · paper use <b>${eff}%</b>`) + warn +
+    (over ? ` · <span class="warn">${L('用紙からはみ出す部分があります。大きさを小さくしてください', 'Some parts do not fit on the paper. Make the model smaller')}</span>` : '');
 }
 
 function hover4(f, from) {
@@ -828,7 +906,7 @@ function hover4(f, from) {
   viewer.setHighlight(m4.cellFaces(f));
   const ci = m4.faceCell[f];
   const c = m4.T.cells[ci];
-  info.innerHTML = `<b>胞 ${ci + 1}</b> · ${m4.T.types[c.type].name}${ci === m4.front ? ' · 手前の胞' : ''}`;
+  info.innerHTML = `<b>${L('胞', 'Cell')} ${ci + 1}</b> · ${m4.T.types[c.type].name}${ci === m4.front ? L(' · 手前の胞', ' · front cell') : ''}`;
   info.hidden = false;
 }
 
@@ -837,11 +915,16 @@ function renderInfo4() {
   const res = state.model4;
   let model = '';
   if (res && res.groups) {
-    model = `<p class="info-h">模型の部品</p><ul class="legend">` +
+    model = `<p class="info-h">${L('模型の部品', 'Model parts')}</p><ul class="legend">` +
       res.groups.map((g) => `<li><span class="sw" style="background:${g.color}"></span><span>${g.label}　${g.name}</span><span class="ct">× ${g.count}</span></li>`).join('') + '</ul>';
   }
   $('info').innerHTML = m4.infoHTML(fmt) + model;
-  const hints = {
+  const hints = isEn() ? {
+    puzzle: 'The front cell becomes the outer shell; the other cells fill it as puzzle pieces.',
+    hull: 'The outline of the projection — the shape of its shadow.',
+    cells: 'The cells in their true shape. Make the right number of each and arrange them like the 3D net.',
+    struts: 'A list of struts and nodes for building the projection as a stick model.',
+  } : {
     puzzle: '手前の胞が外殻になり、その中を残りの胞の部品で埋めます。',
     hull: '投影したときの外形（影の形）です。',
     cells: '本来の形の胞です。数をそろえて作り、3D展開図のように並べられます。',
@@ -880,7 +963,7 @@ const demo = new Demo({
     demoPrev = { view: settings.view, current: state.current ? { ...state.current } : null };
     stopFoldAnim();
     document.body.classList.add('demo');
-    $('btn-demo').querySelector('span').textContent = '終了';
+    $('btn-demo').querySelector('span').textContent = L('終了', 'Stop');
     setView('3d');
     viewer.setOptions({ autoRotate: true });
     hoverFace(-1, '3d');
@@ -889,7 +972,7 @@ const demo = new Demo({
   leave() {
     document.body.classList.remove('demo');
     delete document.body.dataset.keepHash;
-    $('btn-demo').querySelector('span').textContent = 'デモ';
+    $('btn-demo').querySelector('span').textContent = L('デモ', 'Demo');
     setFold(0);
     if (demoPrev) {
       setView(demoPrev.view);
@@ -950,6 +1033,11 @@ initControls();
 renderLibrary();
 mobileUI = new MobileUI();
 $('ver-chip').textContent = 'v' + VERSION;
+applyStatic();
+syncLangUI();
+mobileUI.relabel();
+$('btn-lang').addEventListener('click', () => setLang(isEn() ? 'ja' : 'en'));
+onLang(relabelAll);
 if (location.hash === '#demo') {
   document.body.dataset.keepHash = '1';
   loadItem(findItem('tI'));

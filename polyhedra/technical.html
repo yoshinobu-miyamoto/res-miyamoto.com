@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>詳細技術解説 — Hyperfolder</title>
   <meta name="description" content="Hyperfolder の計算の仕組み（多面体の生成と正準化、展開図、四次元ポリトープの投影と展開）、多面体に関する数学史年表、参考文献、類似アプリと類似サイト。">
+  <link rel="alternate" hreflang="ja" href="technical.html">
+  <link rel="alternate" hreflang="en" href="technical.en.html">
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,11 +15,12 @@
 </head>
 <body>
   <header class="doc-top">
-    <a class="doc-brand" href="./"><b>Hyperfolder</b><i>Between Dimensions</i></a>
+    <a class="doc-brand" href="./?lang=ja"><b>Hyperfolder</b><i>Between Dimensions</i></a>
     <nav class="doc-nav" aria-label="解説文書">
       <a href="about.html">概要と改版履歴</a>
       <a href="technical.html" aria-current="page">詳細技術解説</a>
-      <a href="./">アプリを開く</a>
+      <a href="./?lang=ja">アプリを開く</a>
+      <a href="technical.en.html" hreflang="en" lang="en" class="lang-switch">English</a>
     </nav>
   </header>
 
@@ -25,7 +28,7 @@
     <p class="doc-eyebrow">Technical notes</p>
     <h1>詳細技術解説</h1>
     <p class="lede">Hyperfolder の計算の仕組みと、その背景</p>
-    <p class="meta">対象の版 <span id="cur-ver">2.3.0</span> ／ <a href="about.html">概要と改版履歴へ戻る</a></p>
+    <p class="meta">対象の版 <span id="cur-ver">2.4.0</span> ／ <a href="about.html">概要と改版履歴へ戻る</a></p>
 
     <nav class="toc" aria-label="目次">
       <p>目次</p>
@@ -59,6 +62,7 @@
         <tr><td><code>four.js</code> / <code>mode4d.js</code></td><td>四次元ポリトープの胞の決定、投影、4次元回転、胞の展開、模型</td></tr>
         <tr><td><code>viewer3d.js</code></td><td>3D表示、慣性回転、折り畳みアニメーション</td></tr>
         <tr><td><code>demo.js</code> / <code>mobile.js</code></td><td>デモ・モード、スマホ向けの操作画面</td></tr>
+        <tr><td><code>i18n.js</code></td><td>日本語と英語の切り替え（固定の文言は対訳表、計算結果は表示時に選ぶ）</td></tr>
       </tbody>
     </table></div>
 
@@ -263,7 +267,7 @@ m = kda   n = kd   z = dk   s = dgd</div>
         <tr><td><a href="https://4dtoys.com/" target="_blank" rel="noopener">4D Toys</a></td><td>Marc ten Bosch</td><td>四次元の物体を三次元の断面で見せる物理シミュレーションのおもちゃ。</td></tr>
       </tbody>
     </table></div>
-    <p class="note">Hyperfolder の特色は、ブラウザだけで動き無料であること、画面用（対称性）と印刷用（面積効率）で展開図を分けること、四次元ポリトープの投影から立体パズルや棒模型の部材表まで作れること、日英の切り替えを予定していることです。</p>
+    <p class="note">Hyperfolder の特色は、ブラウザだけで動き無料であること、画面用（対称性）と印刷用（面積効率）で展開図を分けること、四次元ポリトープの投影から立体パズルや棒模型の部材表まで作れること、日本語と英語を切り替えられることです。</p>
 
     <!-- ===================================================== -->
     <h2 id="sites">10. 類似サイト<span class="en">Related websites</span></h2>
@@ -287,10 +291,10 @@ m = kda   n = kd   z = dk   s = dgd</div>
     </ul>
 
     <footer class="doc-foot">
-      <a href="./">アプリを開く</a>
+      <a href="./?lang=ja">アプリを開く</a>
       <a href="about.html">概要と改版履歴</a>
       <a href="../">res-miyamoto.com</a>
-      <span>英語版は次の段階で追加する予定です。</span>
+      <a href="technical.en.html" hreflang="en" lang="en">English</a>
     </footer>
   </main>
 

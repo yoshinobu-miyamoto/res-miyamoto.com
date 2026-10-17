@@ -1,18 +1,21 @@
 // netview.js — 展開図の用紙割付・SVG/DXF 出力
 import { minRect, hull2D } from './unfold.js';
 import { VERSION } from './version.js';
+import { L } from './i18n.js';
 
 export const PAPERS = {
   A4: { ja: 'A4', w: 210, h: 297 },
   A3: { ja: 'A3', w: 297, h: 420 },
   B4: { ja: 'B4', w: 257, h: 364 },
   B5: { ja: 'B5', w: 182, h: 257 },
-  Letter: { ja: 'レター', w: 215.9, h: 279.4 },
+  Letter: { ja: 'レター', en: 'Letter', w: 215.9, h: 279.4 },
 };
 
 export const PAGE_MARGIN = 10; // mm
 export const FOOTER_H = 11; // mm
 const CAPTION_H = 5.5; // mm
+// 部品名（3.2 mm の文字）のおおよその幅: 全角は字幅いっぱい、欧文は約半分
+const captionW = (s) => [...s].reduce((w, ch) => w + (/[\u3000-\u9fff\uff00-\uffef]/.test(ch) ? 3.2 : 1.75), 0);
 
 export function printableArea(paperKey, landscape) {
   const p = PAPERS[paperKey] || PAPERS.A4;
@@ -78,7 +81,7 @@ export function layoutPages(dec, { scale, paper = 'A4', landscape = false, gap =
       const tf = it.tf;
       it.tf = (p) => { const q = tf(p); return [q[0], q[1] + CAPTION_H]; };
       it.h += CAPTION_H;
-      it.w = Math.max(it.w, Math.min(area.w, pc.caption.length * 2.2));
+      it.w = Math.max(it.w, Math.min(area.w, captionW(pc.caption)));
     }
     return it;
   });
@@ -207,13 +210,13 @@ export function pageSVG(page, dec, layout, opt) {
   const fy = H - PAGE_MARGIN - 3.2;
   const x0 = PAGE_MARGIN;
   out.push(`<g font-size="2.6" fill="#555">`);
-  out.push(`<text x="${x0}" y="${f2(fy)}">${esc(opt.title)}${opt.notation ? '  ·  ' + esc(opt.notation) : ''}  ·  ${esc(opt.sizeLabel || '最長辺')} ${f2(opt.edgeMM)} mm  ·  ${opt.footerNote ? esc(opt.footerNote) : opt.pageNo + ' / ' + opt.pageCount}  ·  Hyperfolder v${VERSION}</text>`);
+  out.push(`<text x="${x0}" y="${f2(fy)}">${esc(opt.title)}${opt.notation ? '  ·  ' + esc(opt.notation) : ''}  ·  ${esc(opt.sizeLabel || L('最長辺', 'Longest edge'))} ${f2(opt.edgeMM)} mm  ·  ${opt.footerNote ? esc(opt.footerNote) : opt.pageNo + ' / ' + opt.pageCount}  ·  Hyperfolder v${VERSION}</text>`);
   // 凡例
   const ly = fy - 4.4;
   const leg = [
-    ['切り取り', '#1d1d1d', ''],
-    ['山折り', '#3a3a3a', '2.4 0.9 0.5 0.9'],
-    ['谷折り', '#2f5f9e', '1.4 1.0'],
+    [L('切り取り', 'Cut'), '#1d1d1d', ''],
+    [L('山折り', 'Mountain'), '#3a3a3a', '2.4 0.9 0.5 0.9'],
+    [L('谷折り', 'Valley'), '#2f5f9e', '1.4 1.0'],
   ];
   let lx = x0;
   for (const [name, col, dash] of leg) {
@@ -221,13 +224,13 @@ export function pageSVG(page, dec, layout, opt) {
     out.push(`<text x="${lx + 9.5}" y="${f2(ly + 0.9)}">${name}</text>`);
     lx += 26;
   }
-  out.push(`<rect x="${lx}" y="${f2(ly - 1.6)}" width="6" height="3.2" fill="#ecebe7" stroke="#1d1d1d" stroke-width="0.2"/><text x="${lx + 7.5}" y="${f2(ly + 0.9)}">のりしろ</text>`);
+  out.push(`<rect x="${lx}" y="${f2(ly - 1.6)}" width="6" height="3.2" fill="#ecebe7" stroke="#1d1d1d" stroke-width="0.2"/><text x="${lx + 7.5}" y="${f2(ly + 0.9)}">${L('のりしろ', 'Glue tab')}</text>`);
   // 50mm 校正バー（印刷倍率の確認用）
   const bx = W - PAGE_MARGIN - 50;
   out.push(`<line x1="${bx}" y1="${f2(fy - 1)}" x2="${bx + 50}" y2="${f2(fy - 1)}" stroke="#555" stroke-width="0.3"/>`);
   out.push(`<line x1="${bx}" y1="${f2(fy - 2.6)}" x2="${bx}" y2="${f2(fy + 0.6)}" stroke="#555" stroke-width="0.3"/>`);
   out.push(`<line x1="${bx + 50}" y1="${f2(fy - 2.6)}" x2="${bx + 50}" y2="${f2(fy + 0.6)}" stroke="#555" stroke-width="0.3"/>`);
-  out.push(`<text x="${bx + 25}" y="${f2(fy - 2.2)}" text-anchor="middle">50 mm（印刷倍率の確認用）</text>`);
+  out.push(`<text x="${bx + 25}" y="${f2(fy - 2.2)}" text-anchor="middle">${L('50 mm（印刷倍率の確認用）', '50 mm (check the print scale)')}</text>`);
   out.push('</g>');
   out.push('</g></svg>');
   return out.join('');
@@ -293,10 +296,10 @@ export function strutPageBody(st, opt) {
   y += 6;
   o.push(`<text x="${x0}" y="${y}" font-size="3.2" fill="#666">${esc(opt.subtitle)}</text>`);
   y += 10;
-  o.push(`<text x="${x0}" y="${y}" font-size="4">部材（辺）</text>`);
+  o.push(`<text x="${x0}" y="${y}" font-size="4">${L('部材（辺）', 'Struts (edges)')}</text>`);
   y += 5;
   const col = [x0, x0 + 30, x0 + 75, x0 + 105];
-  o.push(`<g font-size="3" fill="#666"><text x="${col[0]}" y="${y}">記号</text><text x="${col[1]}" y="${y}">長さ</text><text x="${col[2]}" y="${y}">本数</text><text x="${col[3]}" y="${y}">長さ（実寸の線）</text></g>`);
+  o.push(`<g font-size="3" fill="#666"><text x="${col[0]}" y="${y}">${L('記号', 'Key')}</text><text x="${col[1]}" y="${y}">${L('長さ', 'Length')}</text><text x="${col[2]}" y="${y}">${L('本数', 'Count')}</text><text x="${col[3]}" y="${y}">${L('長さ（実寸の線）', 'Length (actual-size line)')}</text></g>`);
   y += 2;
   o.push(`<line x1="${x0}" y1="${y}" x2="${W - PAGE_MARGIN - 4}" y2="${y}" stroke="#bbb" stroke-width="0.2"/>`);
   const maxBar = W - PAGE_MARGIN - 4 - col[3];
@@ -306,7 +309,7 @@ export function strutPageBody(st, opt) {
     const label = i < 26 ? String.fromCharCode(65 + i) : 'Z' + (i - 25);
     o.push(`<text x="${col[0]}" y="${y}" font-size="3.6" font-weight="500">${label}</text>`);
     o.push(`<text x="${col[1]}" y="${y}" font-size="3.6">${r.mm.toFixed(1)} mm</text>`);
-    o.push(`<text x="${col[2]}" y="${y}" font-size="3.6">${r.n} 本</text>`);
+    o.push(`<text x="${col[2]}" y="${y}" font-size="3.6">${r.n}${L(' 本', '')}</text>`);
     const bl = Math.min(r.mm, maxBar);
     o.push(`<line x1="${col[3]}" y1="${y - 1.2}" x2="${col[3] + bl}" y2="${y - 1.2}" stroke="#c4a265" stroke-width="1.2"/>`);
     if (r.mm > maxBar) o.push(`<text x="${col[3] + bl + 1}" y="${y}" font-size="2.6" fill="#888">…</text>`);
@@ -314,20 +317,20 @@ export function strutPageBody(st, opt) {
   y += 6;
   o.push(`<line x1="${x0}" y1="${y}" x2="${W - PAGE_MARGIN - 4}" y2="${y}" stroke="#bbb" stroke-width="0.2"/>`);
   y += 6;
-  o.push(`<text x="${x0}" y="${y}" font-size="3.4">合計 ${st.edges} 本 · 総延長 ${(st.total / 1000).toFixed(2)} m</text>`);
+  o.push(`<text x="${x0}" y="${y}" font-size="3.4">${L(`合計 ${st.edges} 本 · 総延長 ${(st.total / 1000).toFixed(2)} m`, `Total ${st.edges} struts · ${(st.total / 1000).toFixed(2)} m in all`)}</text>`);
   y += 12;
-  o.push(`<text x="${x0}" y="${y}" font-size="4">節点（ジョイント）</text>`);
+  o.push(`<text x="${x0}" y="${y}" font-size="4">${L('節点（ジョイント）', 'Nodes (joints)')}</text>`);
   y += 2;
   for (const [deg, n] of st.nodes) {
     y += 6.5;
-    o.push(`<text x="${col[0]}" y="${y}" font-size="3.6">${deg} 本が集まる節点</text><text x="${col[2]}" y="${y}" font-size="3.6">${n} 個</text>`);
+    o.push(`<text x="${col[0]}" y="${y}" font-size="3.6">${L(`${deg} 本が集まる節点`, `${deg}-strut node`)}</text><text x="${col[2]}" y="${y}" font-size="3.6">${n}${L(' 個', '')}</text>`);
   }
   y += 10;
-  o.push(`<text x="${x0}" y="${y}" font-size="2.8" fill="#666">長さは節点の中心どうしの距離です。部材の太さや接合金物の分を差し引いて切り出してください。</text>`);
+  o.push(`<text x="${x0}" y="${y}" font-size="2.8" fill="#666">${L('長さは節点の中心どうしの距離です。部材の太さや接合金物の分を差し引いて切り出してください。', 'Lengths are centre-to-centre between nodes. Subtract the node size and connector allowance before cutting.')}</text>`);
   const fy = H - PAGE_MARGIN - 3.2;
   const bx = W - PAGE_MARGIN - 50;
-  o.push(`<g font-size="2.6" fill="#555"><text x="${PAGE_MARGIN}" y="${fy}">${esc(opt.title)}  ·  棒模型の部材表  ·  Hyperfolder v${VERSION}</text>`);
-  o.push(`<line x1="${bx}" y1="${fy - 1}" x2="${bx + 50}" y2="${fy - 1}" stroke="#555" stroke-width="0.3"/><text x="${bx + 25}" y="${fy - 2.2}" text-anchor="middle">50 mm（印刷倍率の確認用）</text></g>`);
+  o.push(`<g font-size="2.6" fill="#555"><text x="${PAGE_MARGIN}" y="${fy}">${esc(opt.title)}  ·  ${L('棒模型の部材表', 'Strut list')}  ·  Hyperfolder v${VERSION}</text>`);
+  o.push(`<line x1="${bx}" y1="${fy - 1}" x2="${bx + 50}" y2="${fy - 1}" stroke="#555" stroke-width="0.3"/><text x="${bx + 25}" y="${fy - 2.2}" text-anchor="middle">${L('50 mm（印刷倍率の確認用）', '50 mm (check the print scale)')}</text></g>`);
   o.push('</g>');
   return o.join('');
 }
@@ -340,7 +343,7 @@ export function layoutBoard(dec, { scale, gap = 8 }) {
       const tf = it.tf;
       it.tf = (p) => { const q = tf(p); return [q[0], q[1] + CAPTION_H]; };
       it.h += CAPTION_H;
-      it.w = Math.max(it.w, pc.caption.length * 2.2);
+      it.w = Math.max(it.w, captionW(pc.caption));
     }
     return it;
   });

@@ -3,9 +3,13 @@ import {
   sub, dot, cross, len, unit, dist, centroid, newellNormal, buildEdges,
   facePoints, faceArea, volume, surfaceArea,
 } from './geom.js';
+import { L as tr } from './i18n.js';
 
 const NUM_JA = ['', '', '', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'];
 const ngon = (n) => (NUM_JA[n] || n) + '角形';
+const NGON_EN = ['', '', '', 'triangle', 'quadrilateral', 'pentagon', 'hexagon', 'heptagon', 'octagon', 'nonagon', 'decagon', 'hendecagon', 'dodecagon'];
+const ngonEn = (n) => NGON_EN[n] || n + '-gon';
+const cap = (s) => s[0].toUpperCase() + s.slice(1);
 
 function faceShape(pts) {
   const n = pts.length;
@@ -52,21 +56,23 @@ function nameFace(L, A) {
   const amax = Math.max(...A), amin = Math.min(...A);
   const eqL = lmax - lmin < 1e-4 * lmax;
   const eqA = amax - amin < 0.05;
-  if (eqL && eqA) return n === 4 ? '正方形' : '正' + ngon(n);
+  // 日本語と英語の名前を返す
+  const nm = (ja, en) => ({ ja, en });
+  if (eqL && eqA) return n === 4 ? nm('正方形', 'Square') : n === 3 ? nm('正三角形', 'Equilateral triangle') : nm('正' + ngon(n), 'Regular ' + ngonEn(n));
   if (n === 3) {
     const s = [...L].sort((a, b) => a - b);
-    if (s[1] - s[0] < 1e-4 * lmax || s[2] - s[1] < 1e-4 * lmax) return '二等辺三角形';
-    return '不等辺三角形';
+    if (s[1] - s[0] < 1e-4 * lmax || s[2] - s[1] < 1e-4 * lmax) return nm('二等辺三角形', 'Isosceles triangle');
+    return nm('不等辺三角形', 'Scalene triangle');
   }
   if (n === 4) {
-    if (eqL) return '菱形';
-    if (eqA) return '長方形';
+    if (eqL) return nm('菱形', 'Rhombus');
+    if (eqA) return nm('長方形', 'Rectangle');
     const e = (a, b) => Math.abs(a - b) < 1e-4 * lmax;
-    if ((e(L[0], L[1]) && e(L[2], L[3])) || (e(L[1], L[2]) && e(L[3], L[0]))) return '凧形';
-    return '四角形';
+    if ((e(L[0], L[1]) && e(L[2], L[3])) || (e(L[1], L[2]) && e(L[3], L[0]))) return nm('凧形', 'Kite');
+    return nm('四角形', 'Quadrilateral');
   }
-  if (eqL) return '等辺' + ngon(n);
-  return ngon(n);
+  if (eqL) return nm('等辺' + ngon(n), 'Equilateral ' + ngonEn(n));
+  return nm(ngon(n), cap(ngonEn(n)));
 }
 
 export function analyze(P) {
@@ -98,7 +104,7 @@ export function analyze(P) {
     if (ci === undefined) {
       ci = classes.length;
       sigMap.set(sig, ci);
-      classes.push({ sig, sides: L.length, count: 0, name: nameFace(L, A), area: areas[f], L, A });
+      classes.push({ sig, sides: L.length, count: 0, names: nameFace(L, A), get name() { return tr(this.names.ja, this.names.en); }, area: areas[f], L, A });
     }
     classes[ci].count++;
     faceClass[f] = ci;
@@ -192,19 +198,19 @@ function cmpConfig(a, b) {
 // ---------- 色 ----------
 export const PALETTES = {
   stella: {
-    ja: 'ステラ', colors: ['#e8423f', '#f6c32a', '#2f7fe0', '#36b04a', '#f08a24', '#9b55d4', '#1fb7b0', '#e15fa6', '#8d6a3e', '#a4b23a', '#5b6bd6', '#d9534f'],
+    ja: 'ステラ', en: 'Stella', colors: ['#e8423f', '#f6c32a', '#2f7fe0', '#36b04a', '#f08a24', '#9b55d4', '#1fb7b0', '#e15fa6', '#8d6a3e', '#a4b23a', '#5b6bd6', '#d9534f'],
   },
   washi: {
-    ja: '和紙', colors: ['#c4a265', '#b5524a', '#3f6e8c', '#6e9160', '#d8c6a0', '#7d5b8f', '#c98a3e', '#4f8a86', '#a86f7d', '#8a8f5a', '#5c6f9e', '#b98e5a'],
+    ja: '和紙', en: 'Washi', colors: ['#c4a265', '#b5524a', '#3f6e8c', '#6e9160', '#d8c6a0', '#7d5b8f', '#c98a3e', '#4f8a86', '#a86f7d', '#8a8f5a', '#5c6f9e', '#b98e5a'],
   },
   pastel: {
-    ja: 'パステル', colors: ['#f2a7a0', '#f7dc8c', '#9ec5f0', '#a8dba8', '#f6c193', '#c9b0e8', '#93d9d3', '#f3b4d4', '#d6c2a1', '#cfd98e', '#b0b8ef', '#e8a3a3'],
+    ja: 'パステル', en: 'Pastel', colors: ['#f2a7a0', '#f7dc8c', '#9ec5f0', '#a8dba8', '#f6c193', '#c9b0e8', '#93d9d3', '#f3b4d4', '#d6c2a1', '#cfd98e', '#b0b8ef', '#e8a3a3'],
   },
   gold: {
-    ja: '金と墨', colors: ['#c4a265', '#3a3833', '#e2cf9f', '#8a7448', '#5e5a51', '#f1e6c8', '#a88b52', '#24231f'],
+    ja: '金と墨', en: 'Gold & ink', colors: ['#c4a265', '#3a3833', '#e2cf9f', '#8a7448', '#5e5a51', '#f1e6c8', '#a88b52', '#24231f'],
   },
   paper: {
-    ja: '白い紙', colors: ['#f4f1ea', '#ebe6dc', '#f8f6f1', '#e4ded2', '#efebe3', '#faf9f6'],
+    ja: '白い紙', en: 'White paper', colors: ['#f4f1ea', '#ebe6dc', '#f8f6f1', '#e4ded2', '#efebe3', '#faf9f6'],
   },
 };
 

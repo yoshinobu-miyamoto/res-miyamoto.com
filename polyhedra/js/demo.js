@@ -1,37 +1,44 @@
 // demo.js — 自己紹介（デモ・モード）
 // 見栄えのする代表例を、回転・展開・4次元回転で順に見せる。
 // クリック・キー・タップ・ホイールで終了し、もとの表示に戻る。
+import { L } from './i18n.js';
 
 const SCENES = [
   {
     id: 'tI', ja: '切頂二十面体', en: 'Truncated icosahedron',
     note: '正五角形12枚と正六角形20枚。展開すると、1枚の型紙になります。',
+    noteEn: 'Twelve regular pentagons and twenty regular hexagons. Unfolded, it becomes a single paper net.',
     steps: [['wait', 2600], ['fold', 0, 1, 3600], ['wait', 2200], ['fold', 1, 0, 3000], ['wait', 600]],
   },
   {
-    id: 'GD', param: 4, ja: 'ジオデシックドーム 4V', en: 'Geodesic dome',
+    id: 'GD', param: 4, ja: 'ジオデシックドーム 4V', en: 'Geodesic dome 4V',
     view: [-1.22, 0, 0], // ドームの軸を縦にして、斜め上から見る
     note: '建築でおなじみの構造。合同な三角形の種類ごとに色を分けています。',
+    noteEn: 'A familiar structure in architecture. Each kind of congruent triangle has its own color.',
     steps: [['wait', 2400], ['fold', 0, 1, 4200], ['wait', 2200], ['fold', 1, 0, 3200], ['wait', 600]],
   },
   {
     id: 'gsD', ja: '大星型十二面体', en: 'Great stellated dodecahedron',
     note: 'ケプラー＝ポアンソの星型正多面体。60枚の黄金三角形でできています。',
+    noteEn: 'A Kepler–Poinsot star polyhedron, made of sixty golden triangles.',
     steps: [['wait', 3000], ['fold', 0, 1, 3800], ['wait', 2000], ['fold', 1, 0, 3200], ['wait', 600]],
   },
   {
     id: '8C', ja: '正八胞体（テッセラクト）', en: 'Tesseract — the 4D cube',
     note: '四次元の立方体。4次元で回したあと、8つの立方体が三次元の十字形に開きます。',
+    noteEn: 'The four-dimensional cube. After a turn in 4D, its eight cubes open into a three-dimensional cross.',
     steps: [['spin4', true], ['wait', 6500], ['spin4', false], ['rot4zero'], ['wait', 900], ['fold', 0, 1, 3800], ['wait', 2600], ['fold', 1, 0, 3200], ['wait', 600]],
   },
   {
     id: '24C', ja: '正二十四胞体', en: '24-cell',
     note: '三次元に対応するもののない、四次元だけの正多胞体。24個の正八面体が開きます。',
+    noteEn: 'A regular polytope found only in four dimensions, with no 3D counterpart. Its 24 octahedra unfold.',
     steps: [['wait', 2600], ['fold', 0, 1, 4200], ['wait', 2600], ['fold', 1, 0, 3400], ['wait', 600]],
   },
   {
     id: '120C', ja: '正百二十胞体', en: '120-cell',
     note: '120個の正十二面体でできた四次元の正多胞体。シュレーゲル図で、内側まで透けて見えます。',
+    noteEn: 'A regular 4D polytope of 120 dodecahedra. In the Schlegel diagram you can see all the way inside.',
     steps: [['wait', 1800], ['spin4', true], ['wait', 9000], ['spin4', false], ['rot4zero'], ['wait', 1200]],
   },
 ];
@@ -123,9 +130,8 @@ export class Demo {
     this.api.setFold(0);
     await this.api.load(sc.id, sc.param, sc.view);
     if (!this.alive(token)) return;
-    this.el.querySelector('.demo-ja').textContent = sc.ja;
-    this.el.querySelector('.demo-en').textContent = sc.en;
-    this.el.querySelector('.demo-note').textContent = sc.note;
+    this.cur = sc;
+    this.caption();
     this.el.querySelector('.demo-count').textContent = `${i + 1} / ${SCENES.length}`;
     this.setProgress((i + 1) / SCENES.length);
     this.el.classList.add('show-scene');
@@ -138,6 +144,15 @@ export class Demo {
     }
     this.el.classList.remove('show-scene');
     await this.wait(500, token);
+  }
+
+  // 字幕（言語を切り替えたときにも呼ぶ）
+  caption() {
+    const sc = this.cur;
+    if (!sc) return;
+    this.el.querySelector('.demo-ja').textContent = L(sc.ja, sc.en);
+    this.el.querySelector('.demo-en').textContent = L(sc.en, sc.ja);
+    this.el.querySelector('.demo-note').textContent = L(sc.note, sc.noteEn);
   }
 
   setProgress(k) {

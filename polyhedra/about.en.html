@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>About &amp; History — Hyperfolder</title>
+  <meta name="description" content="Hyperfolder: overview, main features and release history.">
+  <link rel="alternate" hreflang="ja" href="about.html">
+  <link rel="alternate" hreflang="en" href="about.en.html">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+  <header class="doc-top">
+    <a class="doc-brand" href="./?lang=en"><b>Hyperfolder</b><i>Between Dimensions</i></a>
+    <nav class="doc-nav" aria-label="Documentation">
+      <a href="about.en.html" aria-current="page">About &amp; history</a>
+      <a href="technical.en.html">Technical notes</a>
+      <a href="./?lang=en">Open the app</a>
+      <a href="about.html" hreflang="ja" lang="ja" class="lang-switch">日本語</a>
+    </nav>
+  </header>
+
+  <main class="doc">
+    <p class="doc-eyebrow">About</p>
+    <h1>Hyperfolder</h1>
+    <p class="lede">Hyperfolder — Between the Dimensions</p>
+    <p class="meta">Version <span id="cur-ver">2.4.0</span> (released <span id="cur-date">2026-10-17</span>)</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Hyperfolder is a web app for viewing three-dimensional polyhedra and four-dimensional polytopes, unfolding them, and folding them up again in paper. Turn a solid to study its shape, open it into a net to understand its structure, and print a template with glue tabs to build a real model. Its theme is observation by moving back and forth between 4D and 3D, and between 3D and 2D.</p>
+    <p>It runs entirely in the browser and works on computers, tablets and smartphones. No installation or sign-up is needed.</p>
+
+    <h2 id="features">Features</h2>
+    <ul>
+      <li><b>Polyhedron library</b> — 76 solids, including the Platonic, Archimedean, Catalan and Johnson solids, stellations, and geodesic spheres and domes. New shapes can be built with Conway notation (e.g. <code>tI</code>, <code>sC</code>, <code>dkD</code>).</li>
+      <li><b>3D view</b> — Coloring by classes of congruent faces, rotation, and an animation of the solid opening out into its net. Hovering over a face highlights the same face on the template.</li>
+      <li><b>Templates</b> — Non-overlapping nets output with glue tabs, edge numbers and mountain/valley folds. The screen uses a net chosen for symmetry; printing uses a layout chosen for paper efficiency. Export to print/PDF, SVG, DXF and OBJ.</li>
+      <li><b>4D polytopes</b> — 20 polytopes, including the six regular polychora. 3D projections such as the Schlegel diagram, 4D rotation, an animation of the cells opening into a three-dimensional net, a 3D puzzle built from the projected cells, and a parts list for a strut model.</li>
+      <li><b>Demo</b> — A self-introduction mode that automatically shows representative examples. Add <code>#demo</code> to the end of the URL and it starts as soon as the page opens.</li>
+    </ul>
+
+    <h2 id="howto">Getting started</h2>
+    <ol>
+      <li>Choose a shape from the list, or type a Conway notation.</li>
+      <li>Open the solid with “Unfold”, then set the paper and size under “Paper model”.</li>
+      <li>Print at actual size (100%) with “Print / PDF”, cut along the solid lines, fold along the dashed lines, and glue together edges with the same number.</li>
+    </ol>
+    <p class="note">Use the 50 mm scale bar in the template footer to check the print scale.</p>
+
+    <h2 id="history">Release history</h2>
+    <p class="note">Version numbers take the form major.minor.patch. The major number goes up when the name or basic structure changes, the minor number when features are added, and the patch number for fixes. Dates are release dates in Japan Standard Time.</p>
+    <ol class="history" id="history-list">
+      <li><span class="ver">2.3.0<span class="date">2026-10-17</span></span><div><h3>Version numbers and documentation</h3></div></li>
+    </ol>
+
+    <h2 id="more">Technical notes</h2>
+    <a class="link-card" href="technical.en.html">
+      <b>Technical notes</b>
+      <span>Generating and canonicalizing polyhedra, non-overlapping nets and how their symmetry is scored, finding the cells of 4D polytopes and projecting them, a timeline of the mathematical history of polyhedra, references, and related software and websites.</span>
+      <em>Read →</em>
+    </a>
+
+    <p class="epigraph">In Flatland, a Square was led by a Sphere into the third dimension.<br>Here, you travel on — to the fourth, and back again to a single sheet of paper.<cite>A romance of many folds — after Edwin A. Abbott, Flatland (1884)</cite></p>
+
+    <footer class="doc-foot">
+      <a href="./?lang=en">Open the app</a>
+      <a href="technical.en.html">Technical notes</a>
+      <a href="../">res-miyamoto.com</a>
+      <a href="about.html" hreflang="ja" lang="ja">日本語</a>
+    </footer>
+  </main>
+
+  <script type="module">
+    import { VERSION, RELEASED, HISTORY } from './js/version.js';
+    const lang = document.documentElement.lang === 'en' ? 'en' : 'ja';
+    document.getElementById('cur-ver').textContent = VERSION;
+    document.getElementById('cur-date').textContent = RELEASED;
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+    document.getElementById('history-list').innerHTML = HISTORY.map((h, i) => `
+      <li id="v${h.v.replace(/\./g, '-')}"${i === 0 ? ' class="current"' : ''}>
+        <span class="ver">${h.v}<span class="date">${h.date}</span></span>
+        <div><h3>${esc(h.title[lang])}</h3><ul>${h.items[lang].map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>
+      </li>`).join('');
+  </script>
+</body>
+</html>
