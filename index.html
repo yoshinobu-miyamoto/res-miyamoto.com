@@ -165,12 +165,30 @@
         </svg>
       </a>
 
-      <!-- Email -->
-      <a href="mailto:yoshinobu.miyamoto@gmail.com" class="footer-email">yoshinobu.miyamoto@gmail.com</a>
+      <!-- Email: アドレス収集ボットに読まれないよう、ページには書かず、押したときに組み立てる -->
+      <button type="button" class="footer-email" id="contact-mail" data-u="otomayim.ubonihsoy" data-d="moc.liamg">メールで連絡 <span class="en">Contact</span></button>
     </div>
 
     <p class="copyright">&copy; 2026 Miyamoto</p>
   </footer>
+
+  <script>
+    // メールアドレスは押したときだけ組み立てる（逆順に分けて置いてある）
+    (function () {
+      var b = document.getElementById('contact-mail');
+      if (!b) return;
+      b.addEventListener('click', function () {
+        var r = function (s) { return s.split('').reverse().join(''); };
+        var addr = r(b.dataset.u) + String.fromCharCode(64) + r(b.dataset.d);
+        var a = document.createElement('a');
+        a.className = 'footer-email';
+        a.href = 'mailto:' + addr;
+        a.textContent = addr;
+        b.replaceWith(a);
+        location.href = a.href;
+      });
+    })();
+  </script>
 
 </body>
 </html>
