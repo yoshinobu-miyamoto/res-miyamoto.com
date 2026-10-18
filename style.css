@@ -385,6 +385,16 @@ body {
   color: var(--muted);
 }
 
+/* 世界都市交通断面: 収録都市の一覧（CTAの下に小さく） */
+.studio-cities {
+  margin-top: 0.4rem;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  line-height: 1.8;
+  color: var(--muted);
+}
+
 .studio-link:hover .studio-cta span,
 .studio-link:focus-visible .studio-cta span {
   transform: translateX(4px);
