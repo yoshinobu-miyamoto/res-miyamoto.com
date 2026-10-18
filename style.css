@@ -521,6 +521,25 @@ body {
   color: var(--gold);
 }
 
+button.footer-email {
+  background: none;
+  border: 1px solid var(--line, #2d2b27);
+  border-radius: 999px;
+  padding: 0.35em 1.1em;
+  cursor: pointer;
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+button.footer-email:hover {
+  border-color: var(--gold);
+}
+
+button.footer-email .en {
+  margin-left: 0.4em;
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+
 .copyright {
   font-size: 0.8rem;
   color: #555;
