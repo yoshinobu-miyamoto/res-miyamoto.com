@@ -473,6 +473,45 @@ body {
   color: var(--gold);
 }
 
+/* 航路ページの地図（地名を読めるよう本文より広く取る） */
+.voyage-figure {
+  max-width: 48rem;
+  margin: 1.8rem auto 0;
+}
+
+.voyage-figure a {
+  display: block;
+  border: 1px solid #2a2a2a;
+  transition: border-color 0.4s ease;
+}
+
+.voyage-figure a:hover,
+.voyage-figure a:focus-visible {
+  border-color: var(--gold);
+  outline: none;
+}
+
+.voyage-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.voyage-figure figcaption {
+  margin-top: 0.7rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  line-height: 1.8;
+  color: var(--muted);
+}
+
+.voyage-figure figcaption [lang="en"] {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+
 /* 長めの本文は左揃えで、一行の長さを抑える */
 .voyage-text,
 .voyage-context,
