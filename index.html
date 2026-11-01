@@ -49,14 +49,16 @@
   <!-- ===== NEWS: GKOS 開発の現状（冒頭の導入カード → gkos/ の概要ページへ） ===== -->
   <section class="news fade-in" aria-labelledby="news-gkos-title">
     <a class="news-card" href="gkos/">
-      <span class="news-figure">
+      <!-- スマホ幅では横長の枠になるので、塔の全形が入る横長画像に切り替える -->
+      <picture class="news-figure">
+        <source media="(max-width: 600px)" srcset="gkos/gkos-thumb-wide.webp" width="960" height="540">
         <img
           src="gkos/gkos-thumb.webp"
           alt="RES 切紙の三段の塔 — GKOS の表示例 / A three-tier RES kirigami tower simulated in GKOS"
           width="900"
           height="900"
         >
-      </span>
+      </picture>
       <span class="news-body">
         <span class="news-eyebrow">Now Developing <span class="news-eyebrow-jp">開発の現状</span></span>
         <span class="news-title" id="news-gkos-title">GKOS</span>
