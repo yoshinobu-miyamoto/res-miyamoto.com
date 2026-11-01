@@ -1,0 +1,269 @@
+/* ===== GKOS 概要ページ — page.css =====
+   トップページの style.css（色・字体）を土台に、このページの部品と言語切り替えを足す。 */
+
+/* ---------- 言語切り替え：html[data-lang] で片方だけ表示 ---------- */
+html[data-lang="ja"] .en,
+html[data-lang="en"] .ja {
+  display: none !important;
+}
+
+/* ---------- Nav ---------- */
+.gk-nav {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.gk-back {
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.gk-back:hover,
+.gk-back:focus-visible {
+  color: var(--gold);
+}
+
+.gk-lang {
+  display: inline-flex;
+  border: 1px solid rgba(196, 162, 101, 0.55);
+}
+
+.gk-lang button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.gk-lang button + button {
+  border-left: 1px solid rgba(196, 162, 101, 0.55);
+}
+
+.gk-lang button[aria-pressed="true"] {
+  background: var(--gold);
+  color: var(--bg-deep);
+}
+
+.gk-lang button:not([aria-pressed="true"]):hover,
+.gk-lang button:focus-visible {
+  color: var(--gold);
+  outline: none;
+}
+
+/* ---------- Header ---------- */
+.gk-header {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 1.5rem;
+  text-align: center;
+}
+
+.gk-title {
+  font-family: var(--serif);
+  font-size: clamp(2.8rem, 8vw, 4.6rem);
+  font-weight: 300;
+  letter-spacing: 0.3em;
+  padding-left: 0.3em;
+  line-height: 1.1;
+  margin-top: 0.6rem;
+}
+
+.gk-fullname {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+  color: var(--gold);
+  letter-spacing: 0.06em;
+  margin-bottom: 1rem;
+}
+
+.gk-lead {
+  font-family: 'Noto Serif JP', serif;
+  font-size: clamp(0.92rem, 1.9vw, 1.05rem);
+  color: var(--text);
+}
+
+.gk-header .nb,
+.gk-section .nb {
+  display: inline-block;
+}
+
+/* ---------- Video ---------- */
+.gk-video {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 0;
+}
+
+.gk-video video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  background: #f1efe7;
+  border: 1px solid #2a2a2a;
+}
+
+.gk-video figcaption,
+.gk-gallery figcaption,
+.gk-ui figcaption {
+  margin-top: 0.6rem;
+  font-size: 0.8rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+/* ---------- Sections ---------- */
+.gk-section {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 0;
+}
+
+.gk-heading {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  color: var(--text);
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+html[data-lang="en"] .gk-heading {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  letter-spacing: 0.12em;
+}
+
+.gk-prose {
+  max-width: 44em;
+}
+
+.gk-prose p {
+  font-size: 0.95rem;
+  line-height: 1.95;
+  color: var(--text);
+}
+
+.gk-prose p + p {
+  margin-top: 0.9rem;
+}
+
+/* ---------- Features ---------- */
+.gk-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.gk-features > div {
+  padding: 1.1rem 1.25rem;
+  border: 1px solid #2a2a2a;
+  background: #161614;
+}
+
+.gk-features dt {
+  font-family: 'Noto Serif JP', serif;
+  font-weight: 500;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  margin-bottom: 0.4rem;
+}
+
+html[data-lang="en"] .gk-features dt {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+}
+
+.gk-features dd {
+  font-size: 0.88rem;
+  line-height: 1.85;
+  color: var(--text);
+}
+
+/* ---------- Gallery ---------- */
+.gk-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem 1rem;
+}
+
+.gk-gallery img,
+.gk-ui img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid #2a2a2a;
+}
+
+/* ---------- Interface ---------- */
+.gk-ui {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.gk-ui-phone img {
+  max-width: 260px;
+  margin: 0 auto;
+}
+
+/* ---------- Next ---------- */
+.gk-next {
+  list-style: none;
+  margin-top: 1rem;
+  max-width: 44em;
+}
+
+.gk-next li {
+  position: relative;
+  padding-left: 1.4rem;
+  font-size: 0.92rem;
+  line-height: 1.85;
+}
+
+.gk-next li + li {
+  margin-top: 0.4rem;
+}
+
+.gk-next li::before {
+  content: '';
+  position: absolute;
+  left: 0.2rem;
+  top: 0.85em;
+  width: 0.55rem;
+  height: 1px;
+  background: var(--gold);
+}
+
+.gk-credit {
+  padding-bottom: 1rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .gk-gallery,
+  .gk-ui {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

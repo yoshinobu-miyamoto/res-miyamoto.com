@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ja" data-lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GKOS — General Kirigami Origami Simulator | RES Miyamoto</title>
+
+  <!-- SEO / OGP -->
+  <meta name="description" content="GKOS は、折紙と切紙の折り運動をブラウザだけで追跡する剛体折紙・切紙シミュレータです。A browser-based simulator that tracks the folding motion of rigid origami and kirigami.">
+  <meta property="og:title" content="GKOS — General Kirigami Origami Simulator">
+  <meta property="og:description" content="剛体折紙・切紙の運動シミュレータ — 開発の現状。Rigid origami & kirigami motion simulator — development in progress.">
+  <meta property="og:image" content="https://res-miyamoto.com/gkos/media/hero_miura.webp">
+  <meta property="og:url" content="https://res-miyamoto.com/gkos/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:locale:alternate" content="en_US">
+
+  <!-- Favicon -->
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@300;400&display=swap" rel="stylesheet">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="page.css">
+
+  <script>
+    // 表示言語を本文の描画前に決める（?lang= → 前回の選択 → ブラウザの言語）
+    (function () {
+      var l = null;
+      try { l = new URLSearchParams(location.search).get('lang'); } catch (e) {}
+      if (l !== 'ja' && l !== 'en') { try { l = localStorage.getItem('gkos_lang'); } catch (e) {} }
+      if (l !== 'ja' && l !== 'en') { l = /^ja\b/i.test(navigator.language || '') ? 'ja' : 'en'; }
+      document.documentElement.setAttribute('data-lang', l);
+      document.documentElement.lang = l;
+    })();
+  </script>
+</head>
+<body>
+
+  <!-- ===== NAV（戻る＋言語切り替え） ===== -->
+  <nav class="gk-nav" aria-label="Site">
+    <a class="gk-back" href="../">&larr; <span class="gk-nav-brand">RES Miyamoto</span></a>
+    <div class="gk-lang" role="group" aria-label="Language / 言語">
+      <button type="button" data-set-lang="ja" lang="ja">日本語</button>
+      <button type="button" data-set-lang="en" lang="en">English</button>
+    </div>
+  </nav>
+
+  <!-- ===== HEADER ===== -->
+  <header class="gk-header fade-in">
+    <p class="studio-eyebrow">Simulator · <span class="ja">開発の現状</span><span class="en">Development</span></p>
+    <h1 class="gk-title">GKOS</h1>
+    <p class="gk-fullname">General Kirigami Origami Simulator</p>
+    <p class="gk-lead">
+      <span class="ja"><span class="nb">単一ファイルで動く、</span><span class="nb">剛体折紙・切紙の運動シミュレータ</span></span>
+      <span class="en"><span class="nb">A single-file simulator</span> <span class="nb">for the motion of rigid origami and kirigami</span></span>
+    </p>
+  </header>
+
+  <!-- ===== VIDEO ===== -->
+  <section class="gk-video fade-in delay-1">
+    <figure>
+      <video src="media/gkos_highlights.mp4" poster="media/hero_miura.webp"
+             width="1280" height="720" controls muted loop playsinline preload="metadata"></video>
+      <figcaption>
+        <span class="ja">ミウラ折り → RES 三段の立ち上がり（伸び）→ RES 球面 → 切紙の塔 → 曲率の着色。約15秒、音なし。</span>
+        <span class="en">Miura-ori → a three-tier RES rising (with stretch) → RES sphere → kirigami tower → curvature colouring. About 15 s, no sound.</span>
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== OVERVIEW ===== -->
+  <section class="gk-section fade-in delay-2" aria-labelledby="gk-overview">
+    <h2 class="gk-heading" id="gk-overview"><span class="ja">概要</span><span class="en">Overview</span></h2>
+    <div class="gk-prose">
+      <p class="ja">GKOS は、折紙と切紙（キリガミ）の折り運動をブラウザ上で追跡する研究・教育用のシミュレータです。舘知宏の剛体折りシミュレーション法（頂点まわりの回転閉合を Newton 法で解く global-Jacobian 法）を単一の HTML ファイルとして再構成し、非可展頂点・切紙のループ閉合・閉管の全経路・弾性へと拡張しました。インストール不要で、スマートフォンでも動きます。</p>
+      <p class="en">GKOS is a research and teaching simulator that tracks the folding motion of origami and kirigami in the browser. It rebuilds Tomohiro Tachi&rsquo;s rigid-origami simulation method &mdash; the global-Jacobian method, which solves rotational closure around each vertex by Newton iteration &mdash; as a single HTML file, and extends it to non-developable vertices, loop closure for kirigami, full paths of closed tubes, and elasticity. No installation is needed, and it runs on smartphones.</p>
+    </div>
+  </section>
+
+  <!-- ===== FEATURES ===== -->
+  <section class="gk-section fade-in delay-2" aria-labelledby="gk-features">
+    <h2 class="gk-heading" id="gk-features"><span class="ja">できること</span><span class="en">What it does</span></h2>
+    <dl class="gk-features">
+      <div>
+        <dt><span class="ja">折り運動の追跡</span><span class="en">Tracking the fold</span></dt>
+        <dd class="ja">予測子–修正子の連続法で、静的な形ではなく折りの軌跡を追います。直前の形から少しずつ動かすので途中で別の解へ跳ばず、剛体のまま折れなくなる限界を自動で検出します。</dd>
+        <dd class="en">A predictor&ndash;corrector continuation method follows the folding path, not just a static shape. Each step starts from the previous one, so the motion never jumps to another solution, and the limit beyond which the model can no longer fold rigidly is detected automatically.</dd>
+      </div>
+      <div>
+        <dt><span class="ja">非可展頂点</span><span class="en">Non-developable vertices</span></dt>
+        <dd class="ja">セクター角の和が 360° でない頂点（円錐頂点）も同じ式で扱います。</dd>
+        <dd class="en">Vertices whose sector angles do not sum to 360&deg; (cone vertices) are handled by the same formulation.</dd>
+      </div>
+      <div>
+        <dt><span class="ja">切紙と閉管</span><span class="en">Kirigami and closed tubes</span></dt>
+        <dd class="ja">切り込みで分かれた面のつながりを面ループの閉合（SE(3)）として拘束し、ポップアップ切紙や閉じた筒状の模型の全工程を可逆に駆動します。</dd>
+        <dd class="en">Faces separated by cuts are linked through face-loop closure constraints (SE(3)), so pop-up kirigami and closed tubular models can be driven reversibly through their whole motion.</dd>
+      </div>
+      <div>
+        <dt><span class="ja">弾性の拡張</span><span class="en">Beyond rigidity</span></dt>
+        <dd class="ja">剛体では動かない模型のために、面の曲げと、紙のわずかな伸びを許す「棒と蝶番」の解法を備えます。剛体のままでは平坦から動けない曲線切紙（RES）が、塔や球面として立ち上がります。</dd>
+        <dd class="en">For models that cannot move rigidly, GKOS adds face bending and a bar-and-hinge solver that lets the paper stretch slightly. Curved-cut kirigami (RES), which cannot leave the flat state as a rigid mechanism, rises into towers and spheres.</dd>
+      </div>
+      <div>
+        <dt><span class="ja">物理量の着色</span><span class="en">Physical quantities in colour</span></dt>
+        <dd class="ja">歪み・曲げ角・蝶番のエネルギー・曲率を、知覚的に一様で色覚多様性に配慮した配色で表示します。曲率は三角化の細かさに依りません。</dd>
+        <dd class="en">Strain, bending angle, hinge energy and curvature are shown with perceptually uniform, colour-vision-friendly palettes. Curvature does not depend on how finely the faces are triangulated.</dd>
+      </div>
+      <div>
+        <dt><span class="ja">描画</span><span class="en">Rendering</span></dt>
+        <dd class="ja">折線から解析的に求める擬似AO、設置面の影、環境光、静止時の蓄積、Mitsuba への書き出し。</dd>
+        <dd class="en">Pseudo ambient occlusion computed analytically from the creases, ground shadows, environment lighting, progressive accumulation at rest, and Mitsuba export.</dd>
+      </div>
+      <div>
+        <dt><span class="ja">互換性</span><span class="en">Compatibility</span></dt>
+        <dd class="ja">Origami Simulator と同じ規約の SVG／FOLD 展開図を読み込みます。</dd>
+        <dd class="en">Reads crease patterns in SVG / FOLD following the same conventions as Origami Simulator.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- ===== GALLERY ===== -->
+  <section class="gk-section fade-in delay-3" aria-labelledby="gk-gallery">
+    <h2 class="gk-heading" id="gk-gallery"><span class="ja">画像</span><span class="en">Gallery</span></h2>
+    <div class="gk-gallery">
+      <figure>
+        <img src="media/res_a_n4_stretch_100.webp" width="1280" height="720" loading="lazy" alt="RES kirigami, three-tier tower / RES 切紙の三段の塔">
+        <figcaption><span class="ja">RES 切紙の塔 — 紙のわずかな伸びを許して三段に立ち上がる</span><span class="en">RES tower &mdash; rising in three tiers by letting the paper stretch slightly</span></figcaption>
+      </figure>
+      <figure>
+        <img src="media/res_n8_100.webp" width="1280" height="720" loading="lazy" alt="RES sphere / RES 球面">
+        <figcaption><span class="ja">RES 球面 — 曲線の切れ目と穴を持つ環状の面に自動で橋を架け、100% で球面状に</span><span class="en">RES sphere &mdash; an annulus with curved slits, bridged automatically, becomes spherical at 100%</span></figcaption>
+      </figure>
+      <figure>
+        <img src="media/curv_res_n8.webp" width="1280" height="720" loading="lazy" alt="Curvature colouring / 曲率の着色">
+        <figcaption><span class="ja">曲率の着色 — 面内の折角を辺長で重み付けして頂点に集める</span><span class="en">Curvature &mdash; fold angles weighted by edge length and gathered at the vertices</span></figcaption>
+      </figure>
+      <figure>
+        <img src="media/energy_res_a_n4.webp" width="1280" height="720" loading="lazy" alt="Hinge energy colouring / 蝶番のエネルギーの着色">
+        <figcaption><span class="ja">蝶番のエネルギー — どの蝶番が働いているか</span><span class="en">Hinge energy &mdash; which hinges are doing the work</span></figcaption>
+      </figure>
+      <figure>
+        <img src="media/strain_signed_res_a_n4.webp" width="1280" height="720" loading="lazy" alt="Signed strain colouring / 歪み（符号付き）の着色">
+        <figcaption><span class="ja">歪み（符号付き）— 伸びと縮み</span><span class="en">Signed strain &mdash; stretch and compression</span></figcaption>
+      </figure>
+      <figure>
+        <img src="media/miyamotoTower_70.webp" width="1280" height="720" loading="lazy" alt="Kirigami tower / 切紙の塔">
+        <figcaption><span class="ja">切紙の塔</span><span class="en">Kirigami tower</span></figcaption>
+      </figure>
+      <figure>
+        <img src="media/mtmp_tube.webp" width="1280" height="720" loading="lazy" alt="Closed tube (mTMP) / 閉管">
+        <figcaption><span class="ja">閉管（mTMP）— 限界点を越えて全工程を往復</span><span class="en">Closed tube (mTMP) &mdash; the full motion, back and forth past the limit points</span></figcaption>
+      </figure>
+      <figure>
+        <img src="media/waterbomb.webp" width="1280" height="720" loading="lazy" alt="Waterbomb tessellation / ウォーターボム">
+        <figcaption><span class="ja">ウォーターボム</span><span class="en">Waterbomb</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===== INTERFACE ===== -->
+  <section class="gk-section fade-in delay-3" aria-labelledby="gk-ui">
+    <h2 class="gk-heading" id="gk-ui"><span class="ja">画面</span><span class="en">Interface</span></h2>
+    <div class="gk-ui">
+      <figure class="gk-ui-desktop">
+        <img src="media/ui_desktop.webp" width="1280" height="800" loading="lazy" alt="GKOS desktop interface with the colouring panel / GKOS の PC 画面（着色パネル）">
+        <figcaption><span class="ja">PC — 着色パネルで配色と上限を調整</span><span class="en">Desktop &mdash; palette and range in the colouring panel</span></figcaption>
+      </figure>
+      <figure class="gk-ui-phone">
+        <img src="media/ui_phone.webp" width="390" height="844" loading="lazy" alt="GKOS on a smartphone / スマートフォンの GKOS">
+        <figcaption><span class="ja">スマートフォン — パネルは画面下のシートに</span><span class="en">Phone &mdash; panels in a bottom sheet</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===== TECHNICAL ===== -->
+  <section class="gk-section fade-in delay-3" aria-labelledby="gk-tech">
+    <h2 class="gk-heading" id="gk-tech"><span class="ja">技術の要点</span><span class="en">Technical notes</span></h2>
+    <div class="gk-prose">
+      <p class="ja">解析ヤコビアン（頂点 SO(3)・面ループ SE(3)）、RCM 順序付けとスカイライン Cholesky による疎直接法、3 系統の連続法（通常・閉管・非可展）。数値核は Node のハーネスで検証し、代表 4 模型の折り角をビット単位で記録する回帰基準（golden ρ）で、各版の再現性を保っています。</p>
+      <p class="en">Analytic Jacobians (vertex SO(3), face-loop SE(3)); a sparse direct solver with RCM ordering and skyline Cholesky; three continuation schemes (standard, closed tube, non-developable). The numerical core is verified in a Node harness, and a bit-exact regression baseline of fold angles for four reference models (golden &rho;) keeps every revision reproducible.</p>
+      <p class="ja">動作環境：Chrome / Edge / Safari / Firefox の最新版。単一の HTML ファイル（約 1.4 MB）、外部依存なし、オフラインで動作。</p>
+      <p class="en">Runs in current Chrome, Edge, Safari and Firefox. A single HTML file (about 1.4 MB) with no external dependencies; works offline.</p>
+    </div>
+  </section>
+
+  <!-- ===== STATUS / NEXT ===== -->
+  <section class="gk-section fade-in delay-3" aria-labelledby="gk-next">
+    <h2 class="gk-heading" id="gk-next"><span class="ja">現状と今後</span><span class="en">Status and next steps</span></h2>
+    <div class="gk-prose">
+      <!-- 公開 URL・時期が決まったらここに追記する -->
+      <p class="ja">現在 Rev.156。公開に向けて準備中です。</p>
+      <p class="en">Currently at Rev.156, in preparation for public release.</p>
+    </div>
+    <ul class="gk-next">
+      <li><span class="ja">折順探索との統合 — 剛体可動性の判定と折り運動の再生を探索に組み込む</span><span class="en">Integration with fold-order search &mdash; rigid-foldability checks and motion playback inside the search</span></li>
+      <li><span class="ja">RES 設計ツールへの応用 — パラメータからの展開図生成、評価指標、逆設計</span><span class="en">Toward a RES design tool &mdash; pattern generation from parameters, evaluation metrics, inverse design</span></li>
+      <li><span class="ja">既存シミュレータとの数値比較</span><span class="en">Numerical comparison with existing simulators</span></li>
+    </ul>
+  </section>
+
+  <!-- ===== CREDIT ===== -->
+  <section class="gk-section gk-credit fade-in delay-3">
+    <p><span class="ja">開発：宮本好信</span><span class="en">Developed by Yoshinobu Miyamoto</span></p>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="../" class="footer-email">&larr; res-miyamoto.com</a>
+    </div>
+    <p class="copyright">&copy; 2026 Miyamoto</p>
+  </footer>
+
+  <script>
+    // 言語切り替え（選択は端末に記憶。保存できない環境でも切り替え自体は動く）
+    (function () {
+      var root = document.documentElement;
+      var btns = document.querySelectorAll('[data-set-lang]');
+      function apply(l) {
+        root.setAttribute('data-lang', l);
+        root.lang = l;
+        for (var i = 0; i < btns.length; i++) {
+          btns[i].setAttribute('aria-pressed', btns[i].dataset.setLang === l ? 'true' : 'false');
+        }
+      }
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].addEventListener('click', function () {
+          var l = this.dataset.setLang;
+          apply(l);
+          try { localStorage.setItem('gkos_lang', l); } catch (e) {}
+        });
+      }
+      apply(root.getAttribute('data-lang') || 'ja');
+    })();
+  </script>
+
+</body>
+</html>
