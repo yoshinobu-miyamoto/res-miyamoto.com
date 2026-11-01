@@ -28,6 +28,21 @@
 
   <!-- Stylesheet -->
   <link rel="stylesheet" href="style.css">
+
+<style>
+.tatebanko-preview{position:relative;aspect-ratio:4/3;background:radial-gradient(ellipse at center,#393424,#10130f);isolation:isolate}
+.tatebanko-preview .tatebanko-slide{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity 1.2s ease!important;transform:none!important;filter:none!important;-webkit-mask-image:none;mask-image:none}
+.tatebanko-preview .tatebanko-slide.is-current{opacity:1}
+.tatebanko-placeholder{position:absolute;inset:0;display:grid;place-content:center;text-align:center;gap:12px;color:var(--gold);font-family:var(--serif);letter-spacing:.15em;padding:20px}
+.tatebanko-placeholder small{font-family:var(--sans);font-size:.75rem;color:var(--muted);letter-spacing:.05em}
+.tatebanko-preview.has-image .tatebanko-placeholder{display:none}
+.tatebanko-slides-caption{display:block;min-height:2.8em;margin-top:.7rem;font-size:.75rem;line-height:1.6;text-align:center;color:var(--muted)}
+.tatebanko-slides-controls{position:relative;z-index:2;display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem;margin-top:.4rem}
+.tatebanko-slides-controls[hidden]{display:none}
+.tatebanko-slides-controls button{cursor:pointer;font:inherit;font-size:.75rem;color:var(--gold);border:1px solid #685638;background:var(--bg-deep);padding:.5rem .7rem;min-height:40px}
+.tatebanko-slides-controls button:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){.tatebanko-preview .tatebanko-slide{transition:none!important}}
+</style>
 </head>
 <body>
 
@@ -147,31 +162,6 @@
     </figure>
   </section>
 
-  <!-- ===== 立版古仮想空間再現 ===== -->
-  <section class="studio fade-in delay-5" aria-labelledby="tatebanko-title">
-    <a class="studio-link" href="https://amano-iwato-studio.profym.chatgpt.site/">
-      <span class="studio-figure">
-        <img
-          src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22900%22%20height%3D%22900%22%20viewBox%3D%220%200%20900%20900%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22light%22%3E%3Cstop%20stop-color%3D%22%23c4a265%22%20stop-opacity%3D%22.32%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23111%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22900%22%20height%3D%22900%22%20fill%3D%22%23141513%22%2F%3E%3Ccircle%20cx%3D%22450%22%20cy%3D%22390%22%20r%3D%22340%22%20fill%3D%22url(%23light)%22%2F%3E%3Cg%20stroke%3D%22%23c4a265%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m170%20670%20380%2065%20190-160-380-65z%22%20fill%3D%22%2329291f%22%2F%3E%3Cpath%20d%3D%22M265%20565V290l95-90%20230%2042%2069%20118v250l-87%2074V387l-49-91-134-22-57%2062v279z%22%20fill%3D%22%23424737%22%2F%3E%3Cpath%20d%3D%22M210%20614V335l90-111%20242%2043%2089%20140v275l-72%2035V436l-58-102-153-27-62%2075v247z%22%20fill%3D%22%23657057%22%2F%3E%3Cpath%20d%3D%22M160%20669V393l56-99%2082-42%20250%2046%20102%20147v277l-91-17V466l-62-96-161-31-64%2074v277z%22%20fill%3D%22%23858b6b%22%2F%3E%3Cpath%20d%3D%22m160%20669%20112%2021%2064-351-64%2074z%22%20fill%3D%22%23727a5d%22%2F%3E%3Cpath%20d%3D%22m497%20370%2062%2096v239l91%2017V445L548%20298z%22%20fill%3D%22%235c674e%22%2F%3E%3Ccircle%20cx%3D%22438%22%20cy%3D%22408%22%20r%3D%2242%22%20fill%3D%22%23d8b772%22%2F%3E%3Cpath%20d%3D%22m437%20452-31%20112%2059%2010-12-118z%22%20fill%3D%22%23e2d4ad%22%2F%3E%3Cpath%20d%3D%22m365%20525-28%20100%2044%208-1-92z%22%20fill%3D%22%23baa373%22%2F%3E%3Ccircle%20cx%3D%22366%22%20cy%3D%22505%22%20r%3D%2217%22%20fill%3D%22%23ddd0ac%22%2F%3E%3Cpath%20d%3D%22m502%20551-12%2096%2045%208-16-99z%22%20fill%3D%22%239c794f%22%2F%3E%3Ccircle%20cx%3D%22510%22%20cy%3D%22534%22%20r%3D%2217%22%20fill%3D%22%23ddd0ac%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23c4a265%22%20stroke-width%3D%221%22%20opacity%3D%22.45%22%3E%3Cpath%20d%3D%22m160%20669%20380%2066%20190-160M272%20690l166-141M559%20705l122-112%22%2F%3E%3Cpath%20d%3D%22M125%20752h650%22%2F%3E%3C%2Fg%3E%3Ctext%20x%3D%22450%22%20y%3D%22799%22%20fill%3D%22%23c4a265%22%20font-family%3D%22serif%22%20font-size%3D%2223%22%20letter-spacing%3D%228%22%20text-anchor%3D%22middle%22%3EPAPER%20INTO%20SPACE%3C%2Ftext%3E%3C%2Fsvg%3E"
-          alt="天の岩戸をイメージした、奥行きのある紙舞台の模式図"
-          width="900"
-          height="900"
-          loading="lazy"
-        >
-      </span>
-      <span class="studio-body">
-        <span class="studio-eyebrow">Paper Theatre</span>
-        <span class="studio-title" id="tatebanko-title">TATEBANKO</span>
-        <span class="studio-sub" lang="en">Paper into Space</span>
-        <span class="studio-jp"><span class="nb">立版古</span><span class="nb">仮想空間再現</span></span>
-        <span class="studio-desc"><span class="nb">北斎「天の岩戸」のくみあげ絵を、</span><span class="nb">仮想空間の紙舞台へ。</span><span class="nb">視点と光を変えながら、</span><span class="nb">絵の中の世界をめぐる。</span></span>
-        <span class="studio-desc-en" lang="en"><span class="nb">Explore Hokusai&rsquo;s Amano-Iwato</span> <span class="nb">as a virtual paper theatre,</span> <span class="nb">with changing viewpoints and lighting.</span></span>
-        <span class="studio-cta"><span class="nb">天の岩戸スタジオを見る</span> <span aria-hidden="true">&rarr;</span></span>
-        <span class="studio-demo-note"><span class="nb">日本語・英語対応／試作公開</span><br><span class="nb">原図所蔵：ボストン美術館</span></span>
-      </span>
-    </a>
-  </section>
-
   <section class="studio fade-in delay-5" aria-labelledby="quasicrystal-title">
     <a class="studio-link" href="quasicrystal/">
       <span class="studio-figure">
@@ -194,6 +184,38 @@
         <span class="studio-cta">ビューアを見る <span aria-hidden="true">&rarr;</span></span>
       </span>
     </a>
+  </section>
+
+  <!-- ===== 立版古仮想空間再現 ===== -->
+  <section id="tatebanko-card" class="studio fade-in delay-5" aria-labelledby="tatebanko-title">
+    <div class="studio-link studio-card">
+      <span class="studio-figure">
+        <span id="tatebanko-preview" class="tatebanko-preview studio-figure" role="group" aria-label="天の岩戸スタジオの代表六景">
+          <span class="tatebanko-placeholder"><span>天の岩戸</span><small>立版古の六景 / Six scenes</small></span>
+          <img class="tatebanko-slide" alt="" width="900" height="675">
+          <img class="tatebanko-slide" alt="" width="900" height="675">
+          <img class="tatebanko-slide" alt="" width="900" height="675">
+          <img class="tatebanko-slide" alt="" width="900" height="675">
+          <img class="tatebanko-slide" alt="" width="900" height="675">
+          <img class="tatebanko-slide" alt="" width="900" height="675">
+        </span>
+        <span id="tatebanko-scene-caption" class="tatebanko-slides-caption">天の岩戸スタジオから六つの場面を紹介</span>
+        <span id="tatebanko-slides-controls" class="tatebanko-slides-controls" hidden>
+          <button type="button" id="tatebanko-slides-toggle" aria-pressed="true">自動切替を停止 / Pause</button>
+          <button type="button" id="tatebanko-slides-next">次の場面 / Next</button>
+        </span>
+      </span>
+      <span class="studio-body">
+        <span class="studio-eyebrow">Paper Theatre</span>
+        <span class="studio-title" id="tatebanko-title">TATEBANKO</span>
+        <span class="studio-sub" lang="en">Paper into Space</span>
+        <span class="studio-jp"><span class="nb">立版古</span><span class="nb">仮想空間再現</span></span>
+        <span class="studio-desc"><span class="nb">北斎「天の岩戸」のくみあげ絵を、</span><span class="nb">仮想空間の紙舞台へ。</span><span class="nb">視点と光を変えながら、</span><span class="nb">絵の中の世界をめぐる。</span></span>
+        <span class="studio-desc-en" lang="en"><span class="nb">Explore Hokusai&rsquo;s Amano-Iwato</span> <span class="nb">as a virtual paper theatre,</span> <span class="nb">with changing viewpoints and lighting.</span></span>
+        <a class="studio-cta studio-cta-main" href="https://amano-iwato-studio.profym.chatgpt.site/"><span class="nb">天の岩戸スタジオを見る</span> <span aria-hidden="true">&rarr;</span></a>
+        <span class="studio-demo-note"><span class="nb">六景を自動フェード表示／日本語・英語対応／試作公開</span><br><span class="nb">原図所蔵：ボストン美術館</span></span>
+      </span>
+    </div>
   </section>
 
   <section class="studio fade-in delay-5" aria-labelledby="atlas-title">
@@ -338,5 +360,56 @@
     })();
   </script>
 
+
+<script>
+(function(){
+  const root=document.getElementById("tatebanko-card"),preview=document.getElementById("tatebanko-preview");
+  if(!root||!preview)return;
+  const slides=Array.from(preview.querySelectorAll("img"));
+  const caption=document.getElementById("tatebanko-scene-caption");
+  const controls=document.getElementById("tatebanko-slides-controls");
+  const toggle=document.getElementById("tatebanko-slides-toggle");
+  const motion=matchMedia("(prefers-reduced-motion: reduce)");
+  const titles=[],ready=new Set();
+  let current=0,playing=!motion.matches,visible=false,timer=null,started=false,complete=false,child=null,timeout=null;
+  function show(index){current=index;slides.forEach((img,i)=>{img.classList.toggle("is-current",i===index);img.setAttribute("aria-hidden",String(i!==index));});caption.textContent=(index+1)+" / 6 — "+titles[index];}
+  function sync(){clearInterval(timer);timer=null;toggle.textContent=playing?"自動切替を停止 / Pause":"自動切替を再開 / Play";toggle.setAttribute("aria-pressed",String(playing));if(complete&&playing&&visible&&!document.hidden)timer=setInterval(()=>show((current+1)%6),5000);}
+  function cleanup(){clearTimeout(timeout);window.removeEventListener("message",receive);if(child){child.remove();child=null;}}
+  async function receive(event){
+    if(!child||event.source!==child.contentWindow||event.origin!==location.origin)return;
+    const data=event.data;
+    if(!data||data.type!=="tatebanko-scene"||data.version!==1)return;
+    if(data.error){cleanup();return;}
+    if(data.done)return;
+    if(!Number.isInteger(data.index)||data.index<0||data.index>=6||typeof data.image!=="string"||!data.image.startsWith("data:image/jpeg;base64,")||ready.has(data.index))return;
+    const index=data.index;ready.add(index);
+    try{
+      const img=slides[index];img.src=data.image;await img.decode();
+      titles[index]=String(data.title);img.alt="北斎「天の岩戸」の立体再現 — "+titles[index];
+      if(index===0){preview.classList.add("has-image");show(0);}
+      if(titles.filter(Boolean).length===6){complete=true;controls.hidden=false;sync();cleanup();}
+    }catch(error){cleanup();}
+  }
+  function start(){
+    if(started)return;started=true;
+    child=document.createElement("iframe");child.title="天の岩戸スタジオの六景画像生成";
+    child.setAttribute("aria-hidden","true");child.tabIndex=-1;
+    child.style.cssText="position:fixed;left:-15000px;top:0;width:1200px;height:900px;border:0;opacity:0;pointer-events:none";
+    window.addEventListener("message",receive);
+    child.src="assets/tatebanko-scene-renderer.html";
+    document.body.appendChild(child);
+    timeout=setTimeout(()=>{cleanup();if(!preview.classList.contains("has-image"))caption.textContent="六景はスタジオでご覧いただけます";},45000);
+  }
+  toggle.addEventListener("click",()=>{playing=!playing;sync();});
+  document.getElementById("tatebanko-slides-next").addEventListener("click",()=>{playing=false;show((current+1)%6);sync();});
+  document.addEventListener("visibilitychange",sync);
+  motion.addEventListener("change",()=>{playing=!motion.matches;sync();});
+  if("IntersectionObserver" in window){
+    const nearby=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){start();nearby.disconnect();}},{rootMargin:"300px"});
+    nearby.observe(root);
+    new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;sync();}).observe(root);
+  }else{visible=true;start();}
+})();
+</script>
 </body>
 </html>
