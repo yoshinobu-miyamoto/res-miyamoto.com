@@ -163,6 +163,35 @@
     </div>
   </section>
 
+  <!-- ===== SHADING（陰影の深化） ===== -->
+  <section class="gk-section fade-in delay-3" aria-labelledby="gk-shading">
+    <h2 class="gk-heading" id="gk-shading"><span class="ja">陰影</span><span class="en">Shading</span></h2>
+    <div class="gk-prose">
+      <p class="ja">紙の立体らしさは陰影で決まります。GKOS は、折線の角度から解析的に求める擬似AO（谷の奥ほど暗くなる陰）と、設置面に落ちる柔らかな影を重ねて、模型の奥行きを表します。</p>
+      <p class="en">Paper forms read through their shading. GKOS layers pseudo ambient occlusion, computed analytically from the fold angles so that valleys darken toward their depths, with soft shadows cast on the ground, to convey the depth of a model.</p>
+    </div>
+    <div class="gk-shade">
+      <figure class="gk-shade-main">
+        <img src="media/shade_res_sphere_soft.webp" width="1280" height="720" loading="lazy" alt="RES sphere casting a soft shadow on the ground / 柔らかな影を地面に落とす RES 球面">
+        <figcaption><span class="ja">RES 球面 — 曲線の切れ目から漏れる光と、ボケを持った影が地面に落ちる</span><span class="en">RES sphere &mdash; light through the curved slits, and a soft-edged shadow on the ground</span></figcaption>
+      </figure>
+      <figure class="gk-shade-main">
+        <img src="media/shade_res_tower_soft.webp" width="1280" height="720" loading="lazy" alt="Three-tier RES tower casting a soft shadow / 柔らかな影を落とす RES 三段の塔">
+        <figcaption><span class="ja">RES 三段の塔 — 細い枠の影が、柔らかくボケて基盤と地面に映る</span><span class="en">Three-tier RES tower &mdash; the thin frames cast soft, blurred shadows on the base and the ground</span></figcaption>
+      </figure>
+      <div class="gk-shade-pair">
+        <figure>
+          <img src="media/shade_miura_no_ao.webp" width="1280" height="720" loading="lazy" alt="Miura-ori without pseudo AO / 擬似AO なしのミウラ折り">
+          <figcaption><span class="ja">擬似AO なし</span><span class="en">Without pseudo AO</span></figcaption>
+        </figure>
+        <figure>
+          <img src="media/shade_miura_ao.webp" width="1280" height="720" loading="lazy" alt="Miura-ori with pseudo AO / 擬似AO ありのミウラ折り">
+          <figcaption><span class="ja">擬似AO あり — 谷折りの奥が沈み、凹凸が読める</span><span class="en">With pseudo AO &mdash; valleys recede and the relief becomes legible</span></figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== INTERFACE ===== -->
   <section class="gk-section fade-in delay-3" aria-labelledby="gk-ui">
     <h2 class="gk-heading" id="gk-ui"><span class="ja">画面</span><span class="en">Interface</span></h2>
