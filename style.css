@@ -542,8 +542,8 @@ body {
 }
 
 .voyage-context {
-  margin-top: 2.5rem;
-  padding-top: 2rem;
+  margin-top: 2rem;
+  padding-top: 1.6rem;
   border-top: 1px solid #2a2a2a;
 }
 
@@ -618,29 +618,93 @@ body {
   text-decoration: underline;
 }
 
-.voyage-en {
+/* 要点の4つの数字（PCは横一列、スマートフォンは2×2） */
+.voyage-figures {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
   margin-top: 1.4rem;
+  background: #2a2a2a; /* 隙間の1pxを区切り線に見せる */
+  border: 1px solid #2a2a2a;
+  text-align: center;
 }
 
-.voyage-en summary {
-  cursor: pointer;
+.voyage-figures li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 1rem 0.5rem 0.9rem;
+  background: var(--bg-deep);
+}
+
+.vf-num {
+  font-family: var(--serif);
+  font-size: clamp(1.6rem, 3.6vw, 2.1rem);
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--gold);
+  font-variant-numeric: lining-nums; /* Cormorant の数字は既定で上下に揺れるので揃える */
+  white-space: nowrap;
+}
+
+.vf-num small {
+  margin: 0 0.08em;
+  font-family: 'Noto Serif JP', serif;
+  font-size: 0.5em;
+}
+
+.vf-label {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+}
+
+.vf-note {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.vf-en {
   font-family: var(--serif);
   font-style: italic;
-  font-size: 1rem;
-  letter-spacing: 0.06em;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* 説明文と英訳は折りたたみに収める */
+.voyage-more {
+  margin-top: 1.2rem;
+}
+
+.voyage-more summary {
+  cursor: pointer;
+  font-family: 'Noto Serif JP', serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
   color: var(--gold);
   text-align: center;
 }
 
+.voyage-more-en {
+  margin-left: 0.4em;
+  font-family: var(--serif);
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+
 .voyage-en-title {
-  margin-top: 1rem;
+  margin-top: 1.8rem;
   font-family: var(--serif);
   font-size: 1.15rem;
   letter-spacing: 0.04em;
   text-align: center;
 }
 
-.voyage-en .voyage-stats {
+.voyage-stats-en {
   font-family: var(--serif);
   font-size: clamp(0.98rem, 1.8vw, 1.06rem);
   line-height: 1.75;
@@ -648,7 +712,7 @@ body {
 }
 
 .voyage-action {
-  margin-top: 2.5rem;
+  margin-top: 2rem;
 }
 
 .voyage-cta {
@@ -688,27 +752,16 @@ body {
 }
 
 .voyage-sources {
-  margin-top: 2.5rem;
-  padding-top: 1.2rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
   border-top: 1px solid #2a2a2a;
   font-size: 0.78rem;
   line-height: 1.8;
   color: var(--muted);
 }
 
-.voyage-sources-title {
-  letter-spacing: 0.15em;
-}
-
-.voyage-sources-title [lang="en"] {
-  margin-left: 0.4em;
-  font-family: var(--serif);
-  font-style: italic;
-}
-
 .voyage-sources ol {
   list-style: none;
-  margin-top: 0.4rem;
 }
 
 .voyage-sources li {
@@ -729,7 +782,13 @@ body {
 }
 
 .voyage-sources-date {
-  margin-top: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.voyage-sources-date [lang="en"] {
+  margin-left: 0.6em;
+  font-family: var(--serif);
+  font-style: italic;
 }
 
 /* ---------- Now in Preview（旧 Coming 2026） ---------- */
@@ -1042,6 +1101,10 @@ button.footer-email .en {
   .studio-link {
     grid-template-columns: minmax(0, 1fr);
     padding: 1.25rem;
+  }
+
+  .voyage-figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
 }
