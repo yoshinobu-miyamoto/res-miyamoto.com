@@ -996,10 +996,6 @@ button.footer-email .en {
     gap: 1rem;
   }
 
-  .news-figure img {
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
-  }
 
   .news-body .nb {
     display: inline;
