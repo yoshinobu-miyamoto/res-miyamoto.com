@@ -532,6 +532,26 @@ body {
   margin-top: 0.9rem;
 }
 
+/* 紹介文の英訳は折りたたみに収める */
+.voyage-intro-en {
+  max-width: 40rem;
+  margin: 1.2rem auto 0;
+}
+
+.voyage-intro-en summary {
+  cursor: pointer;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  text-align: center;
+}
+
+.voyage-intro-en .voyage-text-en {
+  margin-top: 1rem;
+}
+
 .voyage-text-en {
   margin-top: 1.4rem;
   font-family: var(--serif);
