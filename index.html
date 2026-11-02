@@ -365,52 +365,56 @@
 
 <script>
 (function(){
-  const root=document.getElementById("tatebanko-card"),preview=document.getElementById("tatebanko-preview");
-  if(!root||!preview)return;
-  const slides=Array.from(preview.querySelectorAll("img"));
-  const caption=document.getElementById("tatebanko-scene-caption");
-  const controls=document.getElementById("tatebanko-slides-controls");
-  const toggle=document.getElementById("tatebanko-slides-toggle");
-  const motion=matchMedia("(prefers-reduced-motion: reduce)");
-  const titles=[],ready=new Set();
-  let current=0,playing=!motion.matches,visible=false,timer=null,started=false,complete=false,child=null,timeout=null;
-  function show(index){current=index;slides.forEach((img,i)=>{img.classList.toggle("is-current",i===index);img.setAttribute("aria-hidden",String(i!==index));});caption.textContent=(index+1)+" / 6 — "+titles[index];}
-  function sync(){clearInterval(timer);timer=null;toggle.textContent=playing?"自動切替を停止 / Pause":"自動切替を再開 / Play";toggle.setAttribute("aria-pressed",String(playing));if(complete&&playing&&visible&&!document.hidden)timer=setInterval(()=>show((current+1)%6),5000);}
-  function cleanup(){clearTimeout(timeout);window.removeEventListener("message",receive);if(child){child.remove();child=null;}}
-  async function receive(event){
-    if(!child||event.source!==child.contentWindow||event.origin!==location.origin)return;
-    const data=event.data;
-    if(!data||data.type!=="tatebanko-scene"||data.version!==1)return;
-    if(data.error){cleanup();return;}
-    if(data.done)return;
-    if(!Number.isInteger(data.index)||data.index<0||data.index>=6||typeof data.image!=="string"||!data.image.startsWith("data:image/jpeg;base64,")||ready.has(data.index))return;
-    const index=data.index;ready.add(index);
-    try{
-      const img=slides[index];img.src=data.image;await img.decode();
-      titles[index]=String(data.title);img.alt="北斎「天の岩戸」の立体再現 — "+titles[index];
-      if(index===0){preview.classList.add("has-image");show(0);}
-      if(titles.filter(Boolean).length===6){complete=true;controls.hidden=false;sync();cleanup();}
-    }catch(error){cleanup();}
-  }
-  function start(){
-    if(started)return;started=true;
-    child=document.createElement("iframe");child.title="天の岩戸スタジオの六景画像生成";
-    child.setAttribute("aria-hidden","true");child.tabIndex=-1;
-    child.style.cssText="position:fixed;left:-15000px;top:0;width:1200px;height:900px;border:0;opacity:0;pointer-events:none";
-    window.addEventListener("message",receive);
-    child.src="assets/tatebanko-scene-renderer.html";
-    document.body.appendChild(child);
-    timeout=setTimeout(()=>{cleanup();if(!preview.classList.contains("has-image"))caption.textContent="六景はスタジオでご覧いただけます";},45000);
-  }
-  toggle.addEventListener("click",()=>{playing=!playing;sync();});
-  document.getElementById("tatebanko-slides-next").addEventListener("click",()=>{playing=false;show((current+1)%6);sync();});
-  document.addEventListener("visibilitychange",sync);
-  motion.addEventListener("change",()=>{playing=!motion.matches;sync();});
-  if("IntersectionObserver" in window){
-    const nearby=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){start();nearby.disconnect();}},{rootMargin:"300px"});
-    nearby.observe(root);
-    new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;sync();}).observe(root);
-  }else{visible=true;start();}
+ const root=document.getElementById("tatebanko-card"),preview=document.getElementById("tatebanko-preview");
+ if(!root||!preview)return;
+ const slides=Array.from(preview.querySelectorAll("img")),caption=document.getElementById("tatebanko-scene-caption"),controls=document.getElementById("tatebanko-slides-controls"),toggle=document.getElementById("tatebanko-slides-toggle"),next=document.getElementById("tatebanko-slides-next");
+ const motion=matchMedia("(prefers-reduced-motion: reduce)"),titles=[],loaded=new Set(),pending=new Set();
+ let current=-1,playing=!motion.matches,visible=false,timer=null,started=false,child=null,timeout=null;
+ function show(index){current=index;slides.forEach((img,i)=>{img.classList.toggle("is-current",i===index);img.setAttribute("aria-hidden",String(i!==index));});caption.textContent=(index+1)+" / 6 — "+titles[index];}
+ function advance(){const list=Array.from(loaded).sort((a,b)=>a-b);if(list.length>1)show(list[(list.indexOf(current)+1)%list.length]);}
+ function sync(){
+  clearInterval(timer);timer=null;
+  const multiple=loaded.size>1;controls.hidden=!multiple;
+  toggle.textContent=playing?"自動切替を停止 / Pause":"自動切替を再開 / Play";toggle.setAttribute("aria-pressed",String(playing));next.disabled=!multiple;
+  if(multiple&&playing&&visible&&!document.hidden)timer=setInterval(advance,5000);
+ }
+ function cleanup(){clearTimeout(timeout);window.removeEventListener("message",receive);if(child){child.remove();child=null;}}
+ async function receive(event){
+  if(!child||event.source!==child.contentWindow||event.origin!==location.origin)return;
+  const data=event.data;
+  if(!data||data.type!=="tatebanko-scene"||data.version!==2)return;
+  if(data.fatal){cleanup();return;}
+  if(data.error)return;
+  if(data.done){cleanup();return;}
+  if(!Number.isInteger(data.index)||data.index<0||data.index>5||typeof data.image!=="string"||!data.image.startsWith("data:image/jpeg;base64,")||loaded.has(data.index)||pending.has(data.index))return;
+  const index=data.index;pending.add(index);
+  try{
+   const img=slides[index];img.src=data.image;
+   if(typeof img.decode==="function")await img.decode();
+   else await new Promise((resolve,reject)=>{if(img.complete&&img.naturalWidth)resolve();else{img.onload=resolve;img.onerror=reject;}});
+   titles[index]=String(data.title);img.alt="北斎「天の岩戸」の立体再現 — "+titles[index];
+   loaded.add(index);preview.classList.add("has-image");
+   if(current<0)show(index);
+   sync();
+  }catch(error){slides[index].removeAttribute("src");}
+  finally{pending.delete(index);}
+ }
+ function start(){
+  if(started)return;started=true;
+  child=document.createElement("iframe");child.title="天の岩戸スタジオの六景画像生成";child.setAttribute("aria-hidden","true");child.tabIndex=-1;
+  child.style.cssText="position:fixed;left:-15000px;top:0;width:1200px;height:900px;border:0;opacity:0;pointer-events:none";
+  window.addEventListener("message",receive);child.src="assets/tatebanko-scene-renderer.html?v=2";
+  document.body.appendChild(child);
+  timeout=setTimeout(()=>{cleanup();if(!loaded.size)caption.textContent="六景はスタジオでご覧いただけます";},90000);
+ }
+ toggle.addEventListener("click",()=>{playing=!playing;sync();});
+ next.addEventListener("click",()=>{playing=false;advance();sync();});
+ document.addEventListener("visibilitychange",sync);
+ motion.addEventListener("change",()=>{playing=!motion.matches;sync();});
+ if("IntersectionObserver" in window){
+  const nearby=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){start();nearby.disconnect();}},{rootMargin:"300px"});nearby.observe(root);
+  new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;sync();}).observe(root);
+ }else{visible=true;start();}
 })();
 </script>
 </body>
