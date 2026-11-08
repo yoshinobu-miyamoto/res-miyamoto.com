@@ -99,16 +99,29 @@
   <!-- ===== NEWS: GKOS 開発の現状（ヒーロー・作品写真の直後、Hyperfolder の前 → gkos/ の概要ページへ） ===== -->
   <section class="news fade-in delay-5" aria-labelledby="news-gkos-title">
     <a class="news-card" href="gkos/">
-      <!-- スマホ幅では横長の枠になるので、塔の全形が入る横長画像に切り替える -->
-      <picture class="news-figure">
-        <source media="(max-width: 600px)" srcset="gkos/gkos-thumb-wide.webp" width="960" height="540">
-        <img
-          src="gkos/gkos-thumb.webp"
-          alt="RES 切紙の三段の塔 — GKOS の表示例 / A three-tier RES kirigami tower simulated in GKOS"
-          width="900"
-          height="900"
-        >
-      </picture>
+      <!-- 代表画像を順に切り替える（PC は正方形、スマホ幅は横長。どちらも模型の全形が入るよう切り出し済み） -->
+      <span class="news-figure news-slides" id="gkos-slides">
+        <picture class="news-slide is-current">
+          <source media="(max-width: 600px)" srcset="gkos/cards/res-tower-wide.webp" width="960" height="540">
+          <img src="gkos/cards/res-tower-sq.webp" width="900" height="900" alt="RES 切紙の三段の塔と柔らかな影 — GKOS / A three-tier RES kirigami tower with a soft shadow">
+        </picture>
+        <picture class="news-slide" aria-hidden="true">
+          <source media="(max-width: 600px)" srcset="gkos/cards/res-sphere-wide.webp" width="960" height="540">
+          <img src="gkos/cards/res-sphere-sq.webp" width="900" height="900" loading="lazy" alt="RES 切紙の球面と柔らかな影 — GKOS / A RES kirigami sphere with a soft shadow">
+        </picture>
+        <picture class="news-slide" aria-hidden="true">
+          <source media="(max-width: 600px)" srcset="gkos/cards/miura-wide.webp" width="960" height="540">
+          <img src="gkos/cards/miura-sq.webp" width="900" height="900" loading="lazy" alt="擬似AO で陰影をつけたミウラ折り — GKOS / Miura-ori shaded with pseudo ambient occlusion">
+        </picture>
+        <picture class="news-slide" aria-hidden="true">
+          <source media="(max-width: 600px)" srcset="gkos/cards/curvature-wide.webp" width="960" height="540">
+          <img src="gkos/cards/curvature-sq.webp" width="900" height="900" loading="lazy" alt="RES 球面の曲率の着色 — GKOS / Curvature colouring on a RES sphere">
+        </picture>
+        <picture class="news-slide" aria-hidden="true">
+          <source media="(max-width: 600px)" srcset="gkos/cards/kirigami-tower-wide.webp" width="960" height="540">
+          <img src="gkos/cards/kirigami-tower-sq.webp" width="900" height="900" loading="lazy" alt="切紙の塔 — GKOS / A kirigami tower">
+        </picture>
+      </span>
       <span class="news-body">
         <span class="news-eyebrow">Now Developing <span class="news-eyebrow-jp">開発の現状</span></span>
         <span class="news-title" id="news-gkos-title">GKOS</span>
@@ -449,5 +462,35 @@
  }else{visible=true;start();}
 })();
 </script>
+<script>
+  // GKOS カードの代表画像を順に切り替える（画面外・タブ非表示では止め、動きを減らす設定では切り替えない）
+  (function () {
+    var box = document.getElementById('gkos-slides');
+    if (!box) return;
+    var slides = box.querySelectorAll('.news-slide');
+    if (slides.length < 2) return;
+    var motion = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+    var current = 0, visible = false, timer = null;
+    function show(i) {
+      for (var k = 0; k < slides.length; k++) {
+        slides[k].classList.toggle('is-current', k === i);
+        if (k === i) slides[k].removeAttribute('aria-hidden'); else slides[k].setAttribute('aria-hidden', 'true');
+      }
+      current = i;
+    }
+    function sync() {
+      clearInterval(timer); timer = null;
+      if (visible && !document.hidden && !motion.matches) {
+        timer = setInterval(function () { show((current + 1) % slides.length); }, 5000);
+      }
+    }
+    document.addEventListener('visibilitychange', sync);
+    if (motion.addEventListener) motion.addEventListener('change', sync);
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (e) { visible = e[0].isIntersecting; sync(); }).observe(box);
+    } else { visible = true; sync(); }
+  })();
+</script>
+
 </body>
 </html>
