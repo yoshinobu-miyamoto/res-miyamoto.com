@@ -960,6 +960,29 @@ button.footer-email .en {
   transition: transform 1.2s ease, filter 0.6s ease;
 }
 
+/* 代表画像の切り替え：重ねた画像をフェードで入れ替える */
+.news-slides {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: #f2efe7;
+}
+
+.news-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+
+.news-slide.is-current {
+  opacity: 1;
+}
+
+.news-slide img {
+  height: 100%;
+  object-fit: cover;
+}
+
 .news-body {
   display: flex;
   flex-direction: column;
@@ -1075,6 +1098,10 @@ button.footer-email .en {
     gap: 1rem;
   }
 
+  .news-slides {
+    aspect-ratio: 16 / 9;
+  }
+
 
   .news-body .nb {
     display: inline;
@@ -1126,6 +1153,10 @@ button.footer-email .en {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .news-slide {
+    transition: none;
+  }
+
   .studio-figure img,
   .studio-cta,
   .studio-cta span {
