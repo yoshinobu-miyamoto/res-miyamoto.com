@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="style.css">
 
 <style>
+.news-credit{margin-top:.35rem;font-size:.62rem;letter-spacing:.03em;color:var(--muted);opacity:.75}
 .tatebanko-preview{position:relative;aspect-ratio:4/3;background:radial-gradient(ellipse at center,#393424,#10130f);isolation:isolate}
 .tatebanko-preview .tatebanko-slide{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity 1.2s ease!important;transform:none!important;filter:none!important;-webkit-mask-image:none;mask-image:none}
 .tatebanko-preview .tatebanko-slide.is-current{opacity:1}
@@ -95,6 +96,44 @@
       loading="lazy"
     >
   </div>
+
+  <!-- ===== NEWS: RES Pavilion 仮想建築（GKOS カードの直前 → res-pavilion/ のスクロールで見る起立の過程へ） ===== -->
+  <section class="news fade-in delay-5" aria-labelledby="news-pavilion-title">
+    <a class="news-card" href="res-pavilion/">
+      <!-- 代表場面を順に切り替える（PC は正方形、スマホ幅は横長。res-pavilion/ の画面から文字を外して書き出したもの） -->
+      <span class="news-figure news-slides" id="pavilion-slides">
+        <picture class="news-slide is-current">
+          <source media="(max-width: 600px)" srcset="res-pavilion/cards/dusk-wide.webp" width="960" height="540">
+          <img src="res-pavilion/cards/dusk-sq.webp" width="900" height="900" alt="夕景のエリオット湾に立つ高さ 10 m の RES パビリオン — RES Pavilion / The 10 m RES Pavilion at dusk over Elliott Bay">
+        </picture>
+        <picture class="news-slide" aria-hidden="true">
+          <source media="(max-width: 600px)" srcset="res-pavilion/cards/top-wide.webp" width="960" height="540">
+          <img src="res-pavilion/cards/top-sq.webp" width="900" height="900" loading="lazy" alt="起立の途中を真上から — 三段の輪が回りながら持ち上がる — RES Pavilion / Halfway through erection, seen from above: three rings lift as they turn">
+        </picture>
+        <picture class="news-slide" aria-hidden="true">
+          <source media="(max-width: 600px)" srcset="res-pavilion/cards/lookup-wide.webp" width="960" height="540">
+          <img src="res-pavilion/cards/lookup-sq.webp" width="900" height="900" loading="lazy" alt="中心から見上げる入れ子の正方形の枠 — RES Pavilion / Looking up from the centre through the nested square frames">
+        </picture>
+        <picture class="news-slide" aria-hidden="true">
+          <source media="(max-width: 600px)" srcset="res-pavilion/cards/night-wide.webp" width="960" height="540">
+          <img src="res-pavilion/cards/night-sq.webp" width="900" height="900" loading="lazy" alt="足元のスポットで照らされた夜のパビリオン — RES Pavilion / The pavilion at night, lit by spotlights at its foot">
+        </picture>
+        <picture class="news-slide" aria-hidden="true">
+          <source media="(max-width: 600px)" srcset="res-pavilion/cards/erect-wide.webp" width="960" height="540">
+          <img src="res-pavilion/cards/erect-sq.webp" width="900" height="900" loading="lazy" alt="低い太陽の長い影の中で立ち上がる板 — RES Pavilion / Plates rising upright in the long shadows of a low sun">
+        </picture>
+      </span>
+      <span class="news-body">
+        <span class="news-eyebrow">Virtual Architecture <span class="news-eyebrow-jp">仮想建築</span></span>
+        <span class="news-title" id="news-pavilion-title">RES Pavilion</span>
+        <span class="news-sub">Cast flat, raised upright &mdash; Olympic Sculpture Park, Seattle</span>
+        <span class="news-desc"><span class="nb">地面に打設した薄い板が、</span><span class="nb">回りながら立ち上がり、</span><span class="nb">高さ 10 m のパビリオンになる。</span><span class="nb">RES 切紙の起立を構造とする仮想建築を、</span><span class="nb">スクロールで見る。</span></span>
+        <span class="news-desc-en"><span class="nb">Thin concrete plates, cast flat on the ground,</span> <span class="nb">turn as they rise</span> <span class="nb">into a 10 m pavilion &mdash;</span> <span class="nb">a virtual building whose structure is erected RES kirigami,</span> <span class="nb">told by scrolling.</span></span>
+        <span class="news-cta">スクロールで見る <span class="news-cta-en">Scroll through</span> <span aria-hidden="true">&rarr;</span></span>
+        <span class="news-credit" lang="en">Figures: CesiumMan &copy; Cesium, CC BY 4.0 (simplified)</span>
+      </span>
+    </a>
+  </section>
 
   <!-- ===== NEWS: GKOS 開発の現状（ヒーロー・作品写真の直後、Hyperfolder の前 → gkos/ の概要ページへ） ===== -->
   <section class="news fade-in delay-5" aria-labelledby="news-gkos-title">
@@ -463,10 +502,8 @@
 })();
 </script>
 <script>
-  // GKOS カードの代表画像を順に切り替える（画面外・タブ非表示では止め、動きを減らす設定では切り替えない）
-  (function () {
-    var box = document.getElementById('gkos-slides');
-    if (!box) return;
+  // カード（GKOS・RES Pavilion）の代表画像を順に切り替える（画面外・タブ非表示では止め、動きを減らす設定では切り替えない）
+  Array.prototype.forEach.call(document.querySelectorAll('.news-slides'), function (box) {
     var slides = box.querySelectorAll('.news-slide');
     if (slides.length < 2) return;
     var motion = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
@@ -489,7 +526,7 @@
     if ('IntersectionObserver' in window) {
       new IntersectionObserver(function (e) { visible = e[0].isIntersecting; sync(); }).observe(box);
     } else { visible = true; sync(); }
-  })();
+  });
 </script>
 
 </body>
