@@ -68,7 +68,7 @@
       <button class="op-play" type="button"><span><span class="ja">再生</span><span class="en">Play</span></span></button>
     </div>
     <p class="op-meta">
-      <span><span class="ja">再生中は下の線で位置を動かせます。</span><span class="en">While playing, drag the line at the bottom to seek.</span></span>
+      <span><span class="ja">動画の文字は、上の「日本語／English」に合わせて切り替わります。</span><span class="en">The text in the videos follows the language chosen above.</span></span>
       <a href="hero.html"><span class="ja">全画面で開く</span><span class="en">Open full screen</span> &rarr;</a>
     </p>
   </section>
@@ -86,7 +86,7 @@
       <button class="op-play" type="button"><span><span class="ja">再生</span><span class="en">Play</span></span></button>
     </div>
     <p class="op-meta">
-      <span><span class="ja">再生中は下の線で位置を動かせます。</span><span class="en">While playing, drag the line at the bottom to seek.</span></span>
+      <span><span class="ja">動画の文字は、上の「日本語／English」に合わせて切り替わります。</span><span class="en">The text in the videos follows the language chosen above.</span></span>
       <a href="difficulty.html"><span class="ja">全画面で開く</span><span class="en">Open full screen</span> &rarr;</a>
     </p>
   </section>
@@ -104,7 +104,7 @@
       <button class="op-play" type="button"><span><span class="ja">再生</span><span class="en">Play</span></span></button>
     </div>
     <p class="op-meta">
-      <span><span class="ja">再生中は下の線で位置を動かせます。</span><span class="en">While playing, drag the line at the bottom to seek.</span></span>
+      <span><span class="ja">動画の文字は、上の「日本語／English」に合わせて切り替わります。</span><span class="en">The text in the videos follows the language chosen above.</span></span>
       <a href="fold-order.html"><span class="ja">全画面で開く</span><span class="en">Open full screen</span> &rarr;</a>
     </p>
   </section>
@@ -142,6 +142,7 @@
           var l = this.dataset.setLang;
           apply(l);
           try { localStorage.setItem('gkos_lang', l); } catch (e) {}
+          document.dispatchEvent(new CustomEvent('op-lang', { detail: l }));
         });
       }
       apply(root.getAttribute('data-lang') || 'ja');
@@ -154,11 +155,23 @@
         var fr = f.querySelector('iframe');
         if (fr) { f.removeChild(fr); f.querySelector('.op-play').hidden = false; f.classList.remove('is-playing'); }
       }
+      // 言語を切り替えたら、再生中の動画と「全画面で開く」のリンクも同じ言語にする（動画は頭から再生し直す）
+      function links(l) {
+        Array.prototype.forEach.call(document.querySelectorAll('.op-meta a'), function (a) { a.href = a.getAttribute('href').split('?')[0] + '?lang=' + l; });
+      }
+      links(document.documentElement.getAttribute('data-lang') || 'ja');
+      document.addEventListener('op-lang', function (e) {
+        links(e.detail);
+        Array.prototype.forEach.call(frames, function (f) {
+          var fr = f.querySelector('iframe');
+          if (fr) fr.src = f.getAttribute('data-src') + '?lang=' + e.detail;
+        });
+      });
       Array.prototype.forEach.call(frames, function (f) {
         f.querySelector('.op-play').addEventListener('click', function () {
           Array.prototype.forEach.call(frames, function (g) { if (g !== f) stop(g); });
           var fr = document.createElement('iframe');
-          fr.src = f.getAttribute('data-src');
+          fr.src = f.getAttribute('data-src') + '?lang=' + (document.documentElement.getAttribute('data-lang') || 'ja');
           fr.title = f.parentNode.querySelector('h2').textContent.trim();
           fr.setAttribute('allow', 'fullscreen');
           f.classList.add('is-playing');
