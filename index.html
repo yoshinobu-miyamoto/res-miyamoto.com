@@ -172,6 +172,43 @@
     </a>
   </section>
 
+  <!-- ===== NEWS: 折紙パズル 動画総集編（GKOS カードの直後 → origami-puzzle/ の動画ページへ） ===== -->
+  <section class="news fade-in delay-5" aria-labelledby="news-puzzle-title">
+    <a class="news-card" href="origami-puzzle/">
+      <!-- 動画の代表場面を順に切り替える（PC は正方形、スマホ幅は横長。動画の画面から文字を外して書き出したもの） -->
+      <span class="news-figure news-slides" id="puzzle-slides">
+        <picture class="news-slide is-current">
+          <source media="(max-width: 600px)" srcset="origami-puzzle/cards/moon-wide.webp" width="960" height="540">
+          <img src="origami-puzzle/cards/moon-sq.webp" width="900" height="900" alt="畳み上がった満月 — 月相物語 / The folded full moon — Moon Phases">
+        </picture>
+        <picture class="news-slide" aria-hidden="true">
+          <source media="(max-width: 600px)" srcset="origami-puzzle/cards/rhomb-wide.webp" width="960" height="540">
+          <img src="origami-puzzle/cards/rhomb-sq.webp" width="900" height="900" loading="lazy" alt="畳み上がった菱核の上面 — 折合大全 / The folded top face with its rhombic core — Oriai Taizen">
+        </picture>
+        <picture class="news-slide" aria-hidden="true">
+          <source media="(max-width: 600px)" srcset="origami-puzzle/cards/washi-wide.webp" width="960" height="540">
+          <img src="origami-puzzle/cards/washi-sq.webp" width="900" height="900" loading="lazy" alt="逆光に透かした和紙の折り上がり。重なりの枚数が濃淡になる / Folded washi against the light; the number of layers shows as tone">
+        </picture>
+        <picture class="news-slide" aria-hidden="true">
+          <source media="(max-width: 600px)" srcset="origami-puzzle/cards/strain-wide.webp" width="960" height="540">
+          <img src="origami-puzzle/cards/strain-sq.webp" width="900" height="900" loading="lazy" alt="畳む途中の三種の紙。歪の大きい所が明るい色になる / Three patterns mid-fold; brighter colours mark larger strain">
+        </picture>
+        <picture class="news-slide" aria-hidden="true">
+          <source media="(max-width: 600px)" srcset="origami-puzzle/cards/order-wide.webp" width="960" height="540">
+          <img src="origami-puzzle/cards/order-sq.webp" width="900" height="900" loading="lazy" alt="同じ紙を三つの折り順で畳む途中 / The same sheet mid-fold in three fold orders">
+        </picture>
+      </span>
+      <span class="news-body">
+        <span class="news-eyebrow">Videos <span class="news-eyebrow-jp">動画総集編</span></span>
+        <span class="news-title" id="news-puzzle-title">Origami Puzzle</span>
+        <span class="news-sub">月相物語・折合大全 &mdash; Moon Phases &amp; Oriai Taizen</span>
+        <span class="news-desc"><span class="nb">一枚の紙を畳むと、</span><span class="nb">散らばった絵と色がそろう。</span><span class="nb">二つの折紙パズルの折り畳みと、</span><span class="nb">折りにくさを歪で測り、</span><span class="nb">折り順で峠を下げる解析を、</span><span class="nb">三本の動画で。</span></span>
+        <span class="news-desc-en"><span class="nb">Fold one sheet</span> <span class="nb">and the scattered picture comes together.</span> <span class="nb">Two folding picture puzzles,</span> <span class="nb">how hard each pattern is to fold,</span> <span class="nb">and how fold order lowers the barrier &mdash;</span> <span class="nb">in three short videos.</span></span>
+        <span class="news-cta">動画を見る <span class="news-cta-en">Watch</span> <span aria-hidden="true">&rarr;</span></span>
+      </span>
+    </a>
+  </section>
+
   <!-- ===== STUDIO ===== -->
   <section class="studio fade-in delay-5" aria-labelledby="studio-title">
     <div class="studio-link studio-card">
@@ -502,7 +539,7 @@
 })();
 </script>
 <script>
-  // カード（GKOS・RES Pavilion）の代表画像を順に切り替える（画面外・タブ非表示では止め、動きを減らす設定では切り替えない）
+  // カード（RES Pavilion・GKOS・折紙パズル）の代表画像を順に切り替える（画面外・タブ非表示では止め、動きを減らす設定では切り替えない）
   Array.prototype.forEach.call(document.querySelectorAll('.news-slides'), function (box) {
     var slides = box.querySelectorAll('.news-slide');
     if (slides.length < 2) return;

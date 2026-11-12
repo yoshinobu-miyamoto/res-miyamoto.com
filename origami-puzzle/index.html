@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja" data-lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>折紙パズル 動画総集編 — 月相物語・折合大全 | RES Miyamoto</title>
+
+  <!-- SEO / OGP -->
+  <meta name="description" content="一枚の紙を畳んで絵をそろえる折紙パズル「月相物語」「折合大全」の動画総集編。Videos of two folding picture puzzles, Moon Phases and Oriai Taizen, with strain and fold-order analysis.">
+  <meta property="og:title" content="折紙パズル 動画総集編 — Origami Puzzle Videos">
+  <meta property="og:description" content="月相物語・折合大全の折り畳みと、折りにくさ・折り順の解析。Folding picture puzzles, with strain and fold-order analysis.">
+  <meta property="og:image" content="https://res-miyamoto.com/origami-puzzle/cards/moon-wide.webp">
+  <meta property="og:url" content="https://res-miyamoto.com/origami-puzzle/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:locale:alternate" content="en_US">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@300;400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../gkos/page.css">
+  <link rel="stylesheet" href="page.css">
+
+  <script>
+    // 表示言語を本文の描画前に決める（?lang= → 前回の選択 → ブラウザの言語）。GKOS のページと同じ設定を共有する
+    (function () {
+      var l = null;
+      try { l = new URLSearchParams(location.search).get('lang'); } catch (e) {}
+      if (l !== 'ja' && l !== 'en') { try { l = localStorage.getItem('gkos_lang'); } catch (e) {} }
+      if (l !== 'ja' && l !== 'en') { l = /^ja\b/i.test(navigator.language || '') ? 'ja' : 'en'; }
+      document.documentElement.setAttribute('data-lang', l);
+      document.documentElement.lang = l;
+    })();
+  </script>
+</head>
+<body>
+
+  <nav class="gk-nav" aria-label="Site">
+    <a class="gk-back" href="../">&larr; <span class="gk-nav-brand">RES Miyamoto</span></a>
+    <div class="gk-lang" role="group" aria-label="Language / 言語">
+      <button type="button" data-set-lang="ja" lang="ja">日本語</button>
+      <button type="button" data-set-lang="en" lang="en">English</button>
+    </div>
+  </nav>
+
+  <header class="gk-header fade-in">
+    <p class="studio-eyebrow">Videos · <span class="ja">動画総集編</span><span class="en">Collection</span></p>
+    <h1 class="gk-title" style="letter-spacing:0.12em;font-size:clamp(2rem,6.4vw,3.6rem)">Origami Puzzle</h1>
+    <p class="gk-fullname"><span class="ja">月相物語 ・ 折合大全</span><span class="en">Moon Phases · Oriai Taizen</span></p>
+    <p class="gk-lead">
+      <span class="ja"><span class="nb">一枚の紙を畳むと、</span><span class="nb">散らばった絵と色がそろう。</span></span>
+      <span class="en"><span class="nb">Fold one sheet,</span> <span class="nb">and the scattered picture comes together.</span></span>
+    </p>
+  </header>
+
+  <!-- ===== VIDEO 1: hero ===== -->
+  <section class="op-video fade-in delay-1" aria-labelledby="op-hero">
+    <p class="op-no">01</p>
+    <h2 id="op-hero"><span class="ja">月相物語と折合大全</span><span class="en">Moon Phases &amp; Oriai Taizen</span></h2>
+    <p class="op-desc"><span class="ja">一枚の紙の山谷を替えて折り直すと、月が満ち欠けする「月相物語」。縦・横・斜め 45° の折り線だけで畳み、表裏の色面がそろう「折合大全」。和紙を順光と逆光で見る場面まで。約 90 秒、音なし。</span><span class="en">In <em>Moon Phases</em>, one sheet is refolded with different mountain–valley choices and the moon waxes and wanes. In <em>Oriai Taizen</em>, a sheet folds along horizontal, vertical and 45° creases only, and the colour fields on both sides come together — ending with washi seen in front light and back light. About 90 s, no sound.</span></p>
+    <div class="op-frame" data-src="hero.html">
+      <picture>
+        <source media="(max-width: 600px)" srcset="cards/moon-sq.webp" width="900" height="900">
+        <img src="cards/moon-wide.webp" width="960" height="540" alt="畳み上がった満月 — 月相物語 / The folded full moon — Moon Phases">
+      </picture>
+      <button class="op-play" type="button"><span><span class="ja">再生</span><span class="en">Play</span></span></button>
+    </div>
+    <p class="op-meta">
+      <span><span class="ja">再生中は下の線で位置を動かせます。</span><span class="en">While playing, drag the line at the bottom to seek.</span></span>
+      <a href="hero.html"><span class="ja">全画面で開く</span><span class="en">Open full screen</span> &rarr;</a>
+    </p>
+  </section>
+
+  <!-- ===== VIDEO 2: difficulty ===== -->
+  <section class="op-video fade-in delay-2" aria-labelledby="op-difficulty">
+    <p class="op-no">02</p>
+    <h2 id="op-difficulty"><span class="ja">折りにくさを歪で測る</span><span class="en">Measuring how hard a pattern is to fold</span></h2>
+    <p class="op-desc"><span class="ja">同じ 8×8 の紙でも、山谷の選び方で折りにくさは大きく違う。紙の伸び縮み（歪）を色で示し、63 種から最小・中位・最大の三種を並べて比べる。約 45 秒、音なし。</span><span class="en">On the same 8×8 sheet, the mountain–valley assignment changes how hard the fold is. Strain in the paper is shown in colour, and three patterns — the lowest, the median and the highest of 63 — are folded side by side. About 45 s, no sound.</span></p>
+    <div class="op-frame" data-src="difficulty.html">
+      <picture>
+        <source media="(max-width: 600px)" srcset="cards/strain-sq.webp" width="900" height="900">
+        <img src="cards/strain-wide.webp" width="960" height="540" loading="lazy" alt="畳む途中の三種の紙。歪の大きい所が明るい色になる / Three patterns mid-fold; brighter colours mark larger strain">
+      </picture>
+      <button class="op-play" type="button"><span><span class="ja">再生</span><span class="en">Play</span></span></button>
+    </div>
+    <p class="op-meta">
+      <span><span class="ja">再生中は下の線で位置を動かせます。</span><span class="en">While playing, drag the line at the bottom to seek.</span></span>
+      <a href="difficulty.html"><span class="ja">全画面で開く</span><span class="en">Open full screen</span> &rarr;</a>
+    </p>
+  </section>
+
+  <!-- ===== VIDEO 3: fold-order ===== -->
+  <section class="op-video fade-in delay-3" aria-labelledby="op-fold-order">
+    <p class="op-no">03</p>
+    <h2 id="op-fold-order"><span class="ja">折り順で、峠を下げる</span><span class="en">Lowering the barrier by fold order</span></h2>
+    <p class="op-desc"><span class="ja">最も折りにくい型を、三つの折り順で畳む。全部を同時に折るときの峠（歪エネルギーの山）を 100 とすると、折り線の組を一つずつ順に折って 30、組の折り始めと折り終わりを重ねて 17。約 35 秒、音なし。</span><span class="en">The hardest pattern, folded in three orders. Taking the barrier (the peak of strain energy) for folding everything at once as 100, folding one family of creases at a time gives 30, and overlapping the families gives 17. About 35 s, no sound.</span></p>
+    <div class="op-frame" data-src="fold-order.html">
+      <picture>
+        <source media="(max-width: 600px)" srcset="cards/order-sq.webp" width="900" height="900">
+        <img src="cards/order-wide.webp" width="960" height="540" loading="lazy" alt="同じ紙を三つの折り順で畳む途中 / The same sheet mid-fold in three fold orders">
+      </picture>
+      <button class="op-play" type="button"><span><span class="ja">再生</span><span class="en">Play</span></span></button>
+    </div>
+    <p class="op-meta">
+      <span><span class="ja">再生中は下の線で位置を動かせます。</span><span class="en">While playing, drag the line at the bottom to seek.</span></span>
+      <a href="fold-order.html"><span class="ja">全画面で開く</span><span class="en">Open full screen</span> &rarr;</a>
+    </p>
+  </section>
+
+  <section class="op-note fade-in delay-3">
+    <p class="ja">歪と峠の数値は、紙を棒と蝶番の模型に置き換え、各段でつり合わせて求めた計算上の比です（計算の細かさで多少変わります）。実際の紙での折りやすさの検証はこれからです。第41回 折り紙の科学・数学・教育研究集会（2026年11月13日、筑波大学）の発表「折紙パズルの系譜と生成アプリ」に合わせて公開しました。</p>
+    <p class="en">The strain and barrier figures are ratios computed on a bar-and-hinge model of the paper, equilibrated at each step; they shift somewhat with the resolution of the model, and have not yet been checked against real paper. Published alongside a talk at the 41st Meeting on Origami Science, Mathematics and Education (13 November 2026, University of Tsukuba).</p>
+  </section>
+
+  <section class="gk-section gk-credit fade-in delay-3">
+    <p><span class="ja">制作：宮本好信</span><span class="en">By Yoshinobu Miyamoto</span></p>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="../" class="footer-email">&larr; res-miyamoto.com</a>
+    </div>
+    <p class="copyright">&copy; 2026 Miyamoto</p>
+  </footer>
+
+  <script>
+    // 言語切り替え（GKOS のページと同じ）
+    (function () {
+      var root = document.documentElement;
+      var btns = document.querySelectorAll('[data-set-lang]');
+      function apply(l) {
+        root.setAttribute('data-lang', l);
+        root.lang = l;
+        for (var i = 0; i < btns.length; i++) {
+          btns[i].setAttribute('aria-pressed', btns[i].dataset.setLang === l ? 'true' : 'false');
+        }
+      }
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].addEventListener('click', function () {
+          var l = this.dataset.setLang;
+          apply(l);
+          try { localStorage.setItem('gkos_lang', l); } catch (e) {}
+        });
+      }
+      apply(root.getAttribute('data-lang') || 'ja');
+    })();
+
+    // 動画は「再生」を押したときに読み込む（各 2 MB 前後・立体表示）。同時に動かすのは一つだけにして、ほかは静止画に戻す
+    (function () {
+      var frames = document.querySelectorAll('.op-frame');
+      function stop(f) {
+        var fr = f.querySelector('iframe');
+        if (fr) { f.removeChild(fr); f.querySelector('.op-play').hidden = false; f.classList.remove('is-playing'); }
+      }
+      Array.prototype.forEach.call(frames, function (f) {
+        f.querySelector('.op-play').addEventListener('click', function () {
+          Array.prototype.forEach.call(frames, function (g) { if (g !== f) stop(g); });
+          var fr = document.createElement('iframe');
+          fr.src = f.getAttribute('data-src');
+          fr.title = f.parentNode.querySelector('h2').textContent.trim();
+          fr.setAttribute('allow', 'fullscreen');
+          f.classList.add('is-playing');
+          f.appendChild(fr);
+          this.hidden = true;
+        });
+      });
+    })();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,22 @@
+/* ===== 折紙パズル 動画総集編 — page.css =====
+   ../style.css と ../gkos/page.css（ナビ・見出し・言語切り替え）を土台に、動画の枠だけを足す。 */
+.op-video { max-width: 960px; margin: 0 auto; padding: 2.5rem 1.5rem 0; }
+.op-video h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(1.4rem, 3.4vw, 2rem); letter-spacing: 0.08em; margin: 0 0 0.3rem; }
+.op-video .op-no { font-family: var(--serif); color: var(--gold); letter-spacing: 0.2em; font-size: 0.9rem; margin: 0 0 0.4rem; }
+.op-video .op-desc { color: var(--muted); line-height: 1.9; font-size: 0.95rem; margin: 0 0 1rem; }
+.op-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #0b0f1a; overflow: hidden; border: 1px solid rgba(196, 162, 101, 0.35); }
+.op-frame picture, .op-frame img, .op-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.op-frame img { object-fit: cover; }
+.op-play { position: absolute; inset: 0; width: 100%; height: 100%; appearance: none; border: 0; background: rgba(8, 10, 16, 0.18); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color 0.3s ease; }
+.op-play:hover, .op-play:focus-visible { background: rgba(8, 10, 16, 0.02); outline: none; }
+.op-play > span { display: inline-flex; align-items: center; gap: 0.7em; padding: 0.8em 1.5em; border: 1px solid rgba(255, 255, 255, 0.75); background: rgba(8, 10, 16, 0.55); color: #fff; font-family: var(--sans); font-size: 0.9rem; letter-spacing: 0.2em; }
+.op-play > span::before { content: ""; border-left: 0.8em solid #fff; border-top: 0.5em solid transparent; border-bottom: 0.5em solid transparent; }
+.op-meta { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 0.6rem; font-size: 0.8rem; color: var(--muted); letter-spacing: 0.06em; }
+.op-meta a { color: var(--gold); text-decoration: none; }
+.op-meta a:hover, .op-meta a:focus-visible { text-decoration: underline; }
+.op-note { max-width: 960px; margin: 0 auto; padding: 2.5rem 1.5rem 0; color: var(--muted); font-size: 0.85rem; line-height: 1.9; }
+@media (max-width: 600px) {
+  /* スマホ：静止画は正方形。再生中は縦長の枠にして、動画側の縦長レイアウト（模型を縦に積む）を使う */
+  .op-frame { aspect-ratio: 1 / 1; }
+  .op-frame.is-playing { aspect-ratio: auto; height: min(84vh, 178vw); height: min(84svh, 178vw); }
+}
